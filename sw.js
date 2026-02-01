@@ -1,11 +1,19 @@
-const CACHE_NAME = 'geofotos-v6';
+const CACHE_NAME = 'geofotos-v7';
 const BASE_PATH = '/Geofotos';
 const urlsToCache = [
   `${BASE_PATH}/`,
   `${BASE_PATH}/index.html`,
   `${BASE_PATH}/manifest.json`,
-  `${BASE_PATH}/icon-192.png`,
-  `${BASE_PATH}/icon-512.png`,
+  `${BASE_PATH}/icons/icon-192.png`,
+  `${BASE_PATH}/icons/icon-512.png`,
+  `${BASE_PATH}/css/styles.css`,
+  `${BASE_PATH}/js/utils.js`,
+  `${BASE_PATH}/js/db.js`,
+  `${BASE_PATH}/js/speech.js`,
+  `${BASE_PATH}/js/capture.js`,
+  `${BASE_PATH}/js/history.js`,
+  `${BASE_PATH}/js/backup.js`,
+  `${BASE_PATH}/js/app.js`,
   `${BASE_PATH}/sw.js`
 ];
 
