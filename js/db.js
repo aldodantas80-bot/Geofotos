@@ -1,8 +1,9 @@
 // ========== Database (IndexedDB) ==========
 
 const DB_NAME = 'geofotos';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'records';
+const TAGS_STORE = 'tags';
 let db;
 
 function openDB() {
@@ -19,6 +20,9 @@ function openDB() {
       const database = e.target.result;
       if (!database.objectStoreNames.contains(STORE_NAME)) {
         database.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+      }
+      if (!database.objectStoreNames.contains(TAGS_STORE)) {
+        database.createObjectStore(TAGS_STORE, { keyPath: 'id', autoIncrement: true });
       }
     };
   });
@@ -72,6 +76,72 @@ async function clearAllRecords() {
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
+}
+
+// Atualizar registro existente
+async function updateRecord(id, updates) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    const getRequest = store.get(id);
+    getRequest.onsuccess = () => {
+      const record = getRequest.result;
+      const updated = { ...record, ...updates, updatedAt: new Date().toISOString() };
+      const putRequest = store.put(updated);
+      putRequest.onsuccess = () => resolve(updated);
+      putRequest.onerror = () => reject(putRequest.error);
+    };
+    getRequest.onerror = () => reject(getRequest.error);
+  });
+}
+
+// ========== Tags ==========
+
+async function saveTags(tags) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(TAGS_STORE, 'readwrite');
+    const store = tx.objectStore(TAGS_STORE);
+    // Limpa e salva todas as tags
+    store.clear();
+    tags.forEach(tag => {
+      store.add({ name: tag });
+    });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function getAllTags() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(TAGS_STORE, 'readonly');
+    const store = tx.objectStore(TAGS_STORE);
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result.map(t => t.name));
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function deleteTag(id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(TAGS_STORE, 'readwrite');
+    const store = tx.objectStore(TAGS_STORE);
+    const request = store.delete(id);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function addTagToDB(tagName) {
+  const existingTags = await getAllTags();
+  if (!existingTags.includes(tagName)) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(TAGS_STORE, 'readwrite');
+      const store = tx.objectStore(TAGS_STORE);
+      const request = store.add({ name: tagName });
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
 }
 
 // ========== Geolocation ==========

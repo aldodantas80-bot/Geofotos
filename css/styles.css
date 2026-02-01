@@ -660,3 +660,131 @@ textarea:focus {
   object-fit: cover;
   background: #000;
 }
+
+/* Tags */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--primary);
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.tag-remove {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.suggested-tag {
+  padding: 4px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.suggested-tag:hover {
+  background: var(--border);
+}
+
+/* Photo Gallery */
+.photo-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.photo-gallery-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.photo-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-gallery-item .remove-photo {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* Selection Mode */
+.selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.record-item.selectable {
+  cursor: pointer;
+}
+
+.record-item.selected {
+  outline: 3px solid var(--primary);
+}
+
+.record-item .select-checkbox {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  display: none;
+  z-index: 10;
+}
+
+.record-item.selectable .select-checkbox {
+  display: block;
+}
+
+.record-item.selected .select-checkbox {
+  background: var(--primary);
+}
+
+.record-item.selected .select-checkbox::after {
+  content: '\2713';
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 14px;
+}
+
+/* Record item positioning for checkbox */
+.record-item {
+  position: relative;
+}
+
+/* Accuracy indicator */
+.accuracy-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
