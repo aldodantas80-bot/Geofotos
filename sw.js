@@ -1,4 +1,4 @@
-const CACHE_NAME = 'geofotos-v4';
+const CACHE_NAME = 'geofotos-v5';
 const BASE_PATH = '/Geofotos';
 const urlsToCache = [
   `${BASE_PATH}/`,
