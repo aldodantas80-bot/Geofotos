@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a73e8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GeoFotos">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>GeoFotos</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: #1a73e8;
+      --primary-dark: #1557b0;
+      --danger: #d93025;
+      --success: #1e8e3e;
+      --bg: #f8f9fa;
+      --card-bg: #ffffff;
+      --text: #202124;
+      --text-secondary: #5f6368;
+      --border: #dadce0;
+      --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 16px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    .tabs {
+      display: flex;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .view {
+      display: none;
+      padding: 16px;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 12px;
+      width: auto;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn-group .btn {
+      flex: 1;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .preview-img {
+      width: 100%;
+      max-height: 300px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .coords-display {
+      background: var(--bg);
+      padding: 12px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 14px;
+      margin: 12px 0;
+      word-break: break-all;
+    }
+
+    .coords-display .label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .record-item {
+      background: var(--card-bg);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .record-item img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+    }
+
+    .record-content {
+      padding: 12px;
+    }
+
+    .record-type {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .record-type.photo {
+      background: #e8f0fe;
+      color: var(--primary);
+    }
+
+    .record-type.location {
+      background: #e6f4ea;
+      color: var(--success);
+    }
+
+    .record-date {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .record-coords {
+      font-family: monospace;
+      font-size: 13px;
+      background: var(--bg);
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .record-notes {
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #323232;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--card-bg);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .install-prompt {
+      display: none;
+      position: fixed;
+      bottom: 90px;
+      left: 16px;
+      right: 16px;
+      background: var(--card-bg);
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 150;
+    }
+
+    .install-prompt.show {
+      display: block;
+    }
+
+    .install-prompt p {
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📍 GeoFotos</h1>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-view="capture">Capturar</button>
+    <button class="tab" data-view="history">Histórico</button>
+  </div>
+
+  <!-- View: Capturar -->
+  <div id="capture" class="view active">
+    <div class="card">
+      <h3 style="margin-bottom: 16px;">📸 Foto + Localização</h3>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment">
+      <button class="btn btn-primary" id="takePhotoBtn">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2 7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+        Tirar Foto
+      </button>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom: 16px;">📍 Apenas Localização</h3>
+      <button class="btn btn-success" id="getLocationBtn">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+        Capturar Localização
+      </button>
+    </div>
+
+    <!-- Preview da foto capturada -->
+    <div id="photoPreview" class="card" style="display: none;">
+      <img id="previewImg" class="preview-img" alt="Preview">
+      
+      <div class="coords-display">
+        <div class="label">COORDENADAS</div>
+        <span id="previewCoords">Obtendo localização...</span>
+      </div>
+      
+      <textarea id="notesInput" placeholder="Adicione observações sobre a foto/local..."></textarea>
+      
+      <div class="btn-group">
+        <button class="btn btn-secondary" id="cancelPhotoBtn">Cancelar</button>
+        <button class="btn btn-primary" id="savePhotoBtn">Salvar</button>
+      </div>
+    </div>
+
+    <!-- Preview apenas localização -->
+    <div id="locationPreview" class="card" style="display: none;">
+      <div class="coords-display">
+        <div class="label">COORDENADAS</div>
+        <span id="locationCoords">Obtendo localização...</span>
+      </div>
+      
+      <textarea id="locationNotesInput" placeholder="Adicione observações sobre este local..."></textarea>
+      
+      <div class="btn-group">
+        <button class="btn btn-secondary" id="cancelLocationBtn">Cancelar</button>
+        <button class="btn btn-primary" id="saveLocationBtn">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View: Histórico -->
+  <div id="history" class="view">
+    <div id="recordsList"></div>
+    <div id="emptyState" class="empty-state">
+      <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+      <p>Nenhum registro ainda</p>
+      <p style="font-size: 13px;">Capture fotos ou localizações para começar</p>
+    </div>
+  </div>
+
+  <!-- Modal de detalhes -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal">
+      <div class="modal-header">Detalhes do Registro</div>
+      <div class="modal-body" id="modalContent"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-small" id="closeModalBtn">Fechar</button>
+        <button class="btn btn-danger btn-small" id="deleteRecordBtn">Excluir</button>
+        <button class="btn btn-secondary btn-small" id="savePhotoModalBtn" style="display:none;">💾 Foto</button>
+        <button class="btn btn-primary btn-small" id="shareRecordBtn">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Install prompt Android -->
+  <div class="install-prompt" id="installPrompt">
+    <p><strong>Instalar GeoFotos?</strong><br>Adicione à tela inicial para acesso rápido.</p>
+    <div class="btn-group">
+      <button class="btn btn-secondary btn-small" id="dismissInstall">Agora não</button>
+      <button class="btn btn-primary btn-small" id="installBtn">Instalar</button>
+    </div>
+  </div>
+
+  <!-- Install prompt iOS -->
+  <div class="install-prompt" id="iosInstallPrompt">
+    <p><strong>Instalar GeoFotos</strong><br>Toque em <span style="font-size:18px;">⬆️</span> e depois em <strong>"Adicionar à Tela de Início"</strong></p>
+    <div class="btn-group">
+      <button class="btn btn-secondary btn-small" id="dismissIosInstall">Entendi</button>
+    </div>
+  </div>
+
+  <script>
+    // ========== Database (IndexedDB) ==========
+    const DB_NAME = 'geofotos';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'records';
+    let db;
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          db = request.result;
+          resolve(db);
+        };
+        
+        request.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains(STORE_NAME)) {
+            database.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+          }
+        };
+      });
+    }
+
+    async function saveRecord(record) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.add(record);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function getAllRecords() {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result.reverse());
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function deleteRecord(id) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.delete(id);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function getRecord(id) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    // ========== Geolocation ==========
+    function getCurrentPosition() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocalização não suportada'));
+          return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy
+          }),
+          (err) => reject(err),
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      });
+    }
+
+    function formatCoords(lat, lng) {
+      return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+
+    // ========== UI Helpers ==========
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('Copiado!');
+      } catch {
+        showToast('Erro ao copiar');
+      }
+    }
+
+    // ========== Tabs ==========
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.view).classList.add('active');
+        
+        if (tab.dataset.view === 'history') {
+          renderHistory();
+        }
+      });
+    });
+
+    // ========== Foto + Localização ==========
+    const cameraInput = document.getElementById('cameraInput');
+    const takePhotoBtn = document.getElementById('takePhotoBtn');
+    const photoPreview = document.getElementById('photoPreview');
+    const previewImg = document.getElementById('previewImg');
+    const previewCoords = document.getElementById('previewCoords');
+    const notesInput = document.getElementById('notesInput');
+
+    let currentPhotoData = null;
+    let currentPhotoCoords = null;
+
+    takePhotoBtn.addEventListener('click', () => cameraInput.click());
+
+    cameraInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // Converter para base64
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        currentPhotoData = ev.target.result;
+        previewImg.src = currentPhotoData;
+        photoPreview.style.display = 'block';
+        notesInput.value = '';
+        previewCoords.textContent = 'Obtendo localização...';
+
+        try {
+          const pos = await getCurrentPosition();
+          currentPhotoCoords = pos;
+          previewCoords.textContent = formatCoords(pos.lat, pos.lng);
+        } catch (err) {
+          previewCoords.textContent = 'Erro ao obter localização';
+          currentPhotoCoords = null;
+        }
+      };
+      reader.readAsDataURL(file);
+      cameraInput.value = '';
+    });
+
+    document.getElementById('cancelPhotoBtn').addEventListener('click', () => {
+      photoPreview.style.display = 'none';
+      currentPhotoData = null;
+      currentPhotoCoords = null;
+    });
+
+    document.getElementById('savePhotoBtn').addEventListener('click', async () => {
+      if (!currentPhotoCoords) {
+        showToast('Aguarde a localização');
+        return;
+      }
+
+      const record = {
+        type: 'photo',
+        photo: currentPhotoData,
+        lat: currentPhotoCoords.lat,
+        lng: currentPhotoCoords.lng,
+        notes: notesInput.value.trim(),
+        createdAt: new Date().toISOString()
+      };
+
+      await saveRecord(record);
+      showToast('Salvo com sucesso!');
+      photoPreview.style.display = 'none';
+      currentPhotoData = null;
+      currentPhotoCoords = null;
+    });
+
+    // ========== Apenas Localização ==========
+    const locationPreview = document.getElementById('locationPreview');
+    const locationCoords = document.getElementById('locationCoords');
+    const locationNotesInput = document.getElementById('locationNotesInput');
+
+    let currentLocationCoords = null;
+
+    document.getElementById('getLocationBtn').addEventListener('click', async () => {
+      locationPreview.style.display = 'block';
+      locationCoords.textContent = 'Obtendo localização...';
+      locationNotesInput.value = '';
+
+      try {
+        const pos = await getCurrentPosition();
+        currentLocationCoords = pos;
+        locationCoords.textContent = formatCoords(pos.lat, pos.lng);
+      } catch (err) {
+        locationCoords.textContent = 'Erro ao obter localização';
+        currentLocationCoords = null;
+      }
+    });
+
+    document.getElementById('cancelLocationBtn').addEventListener('click', () => {
+      locationPreview.style.display = 'none';
+      currentLocationCoords = null;
+    });
+
+    document.getElementById('saveLocationBtn').addEventListener('click', async () => {
+      if (!currentLocationCoords) {
+        showToast('Aguarde a localização');
+        return;
+      }
+
+      const record = {
+        type: 'location',
+        lat: currentLocationCoords.lat,
+        lng: currentLocationCoords.lng,
+        notes: locationNotesInput.value.trim(),
+        createdAt: new Date().toISOString()
+      };
+
+      await saveRecord(record);
+      showToast('Salvo com sucesso!');
+      locationPreview.style.display = 'none';
+      currentLocationCoords = null;
+    });
+
+    // ========== Histórico ==========
+    async function renderHistory() {
+      const records = await getAllRecords();
+      const list = document.getElementById('recordsList');
+      const empty = document.getElementById('emptyState');
+
+      if (records.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+      list.innerHTML = records.map(r => `
+        <div class="record-item" data-id="${r.id}">
+          ${r.type === 'photo' ? `<img src="${r.photo}" alt="Foto">` : ''}
+          <div class="record-content">
+            <span class="record-type ${r.type}">${r.type === 'photo' ? '📸 Foto' : '📍 Localização'}</span>
+            <div class="record-date">${new Date(r.createdAt).toLocaleString('pt-BR')}</div>
+            <div class="record-coords" onclick="copyToClipboard('${formatCoords(r.lat, r.lng)}')" style="cursor:pointer;" title="Clique para copiar">
+              ${formatCoords(r.lat, r.lng)}
+            </div>
+            ${r.notes ? `<div class="record-notes">${r.notes}</div>` : ''}
+            <div class="btn-group">
+              <button class="btn btn-secondary btn-small" onclick="copyRecordData(${r.id})">📋 Copiar</button>
+              ${r.type === 'photo' ? `<button class="btn btn-secondary btn-small" onclick="savePhotoToGallery(${r.id})">💾 Foto</button>` : ''}
+              <button class="btn btn-primary btn-small" onclick="shareRecord(${r.id})">📤 Enviar</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ========== Copiar dados ==========
+    async function copyRecordData(id) {
+      const record = await getRecord(id);
+      const text = `📍 Coordenadas: ${formatCoords(record.lat, record.lng)}${record.notes ? `\n📝 Observações: ${record.notes}` : ''}\n📅 ${new Date(record.createdAt).toLocaleString('pt-BR')}`;
+      await copyToClipboard(text);
+    }
+
+    // ========== Detectar iOS ==========
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    // ========== Salvar foto na galeria (download) ==========
+    function downloadPhoto(base64Data, filename) {
+      const link = document.createElement('a');
+      link.href = base64Data;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // ========== Compartilhar ==========
+    async function shareRecord(id) {
+      const record = await getRecord(id);
+      const text = `📍 Coordenadas: ${formatCoords(record.lat, record.lng)}${record.notes ? `\n📝 Observações: ${record.notes}` : ''}\n📅 ${new Date(record.createdAt).toLocaleString('pt-BR')}`;
+
+      if (record.type === 'photo' && navigator.canShare) {
+        try {
+          // Converter base64 para blob
+          const response = await fetch(record.photo);
+          const blob = await response.blob();
+          const file = new File([blob], `geofoto_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              title: 'GeoFotos',
+              text: text,
+              files: [file]
+            });
+            return;
+          }
+        } catch (err) {
+          console.log('Erro ao compartilhar com arquivo:', err);
+          
+          // Fallback iOS: baixar foto + copiar texto
+          if (isIOS && record.type === 'photo') {
+            await copyToClipboard(text);
+            downloadPhoto(record.photo, `geofoto_${Date.now()}.jpg`);
+            showToast('Texto copiado! Foto salva na galeria.');
+            return;
+          }
+        }
+      }
+
+      // Fallback: compartilhar só texto
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'GeoFotos',
+            text: text
+          });
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            await copyToClipboard(text);
+          }
+        }
+      } else {
+        await copyToClipboard(text);
+      }
+    }
+
+    // ========== Salvar foto separadamente (botão extra) ==========
+    async function savePhotoToGallery(id) {
+      const record = await getRecord(id);
+      if (record.type !== 'photo') return;
+      
+      const filename = `geofoto_${new Date(record.createdAt).toISOString().slice(0,10)}_${record.id}.jpg`;
+      downloadPhoto(record.photo, filename);
+      showToast('Foto salva!');
+    }
+
+    // ========== Modal detalhes (clique no item) ==========
+    let currentModalRecordId = null;
+
+    document.getElementById('recordsList').addEventListener('click', async (e) => {
+      const item = e.target.closest('.record-item');
+      if (!item || e.target.closest('.btn')) return;
+
+      const id = parseInt(item.dataset.id);
+      const record = await getRecord(id);
+      currentModalRecordId = id;
+
+      // Mostrar/esconder botão de salvar foto
+      const savePhotoBtn = document.getElementById('savePhotoModalBtn');
+      savePhotoBtn.style.display = record.type === 'photo' ? 'inline-flex' : 'none';
+
+      const content = `
+        ${record.type === 'photo' ? `<img src="${record.photo}" style="width:100%;border-radius:8px;margin-bottom:12px;">` : ''}
+        <div class="coords-display" onclick="copyToClipboard('${formatCoords(record.lat, record.lng)}')" style="cursor:pointer;">
+          <div class="label">COORDENADAS (clique para copiar)</div>
+          ${formatCoords(record.lat, record.lng)}
+        </div>
+        ${record.notes ? `<div style="margin-top:12px;"><strong>Observações:</strong><p style="margin-top:4px;white-space:pre-wrap;">${record.notes}</p></div>` : ''}
+        <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);">${new Date(record.createdAt).toLocaleString('pt-BR')}</div>
+      `;
+
+      document.getElementById('modalContent').innerHTML = content;
+      document.getElementById('detailModal').classList.add('show');
+    });
+
+    document.getElementById('closeModalBtn').addEventListener('click', () => {
+      document.getElementById('detailModal').classList.remove('show');
+    });
+
+    document.getElementById('deleteRecordBtn').addEventListener('click', async () => {
+      if (confirm('Excluir este registro?')) {
+        await deleteRecord(currentModalRecordId);
+        document.getElementById('detailModal').classList.remove('show');
+        renderHistory();
+        showToast('Registro excluído');
+      }
+    });
+
+    document.getElementById('shareRecordBtn').addEventListener('click', () => {
+      shareRecord(currentModalRecordId);
+    });
+
+    document.getElementById('savePhotoModalBtn').addEventListener('click', () => {
+      savePhotoToGallery(currentModalRecordId);
+    });
+
+    document.getElementById('detailModal').addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) {
+        document.getElementById('detailModal').classList.remove('show');
+      }
+    });
+
+    // ========== PWA Install ==========
+    let deferredPrompt;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('installPrompt').classList.add('show');
+    });
+
+    document.getElementById('installBtn').addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      document.getElementById('installPrompt').classList.remove('show');
+    });
+
+    document.getElementById('dismissInstall').addEventListener('click', () => {
+      document.getElementById('installPrompt').classList.remove('show');
+    });
+
+    // iOS install prompt
+    if (isIOS && !window.navigator.standalone && !localStorage.getItem('iosInstallDismissed')) {
+      setTimeout(() => {
+        document.getElementById('iosInstallPrompt').classList.add('show');
+      }, 2000);
+    }
+
+    document.getElementById('dismissIosInstall').addEventListener('click', () => {
+      document.getElementById('iosInstallPrompt').classList.remove('show');
+      localStorage.setItem('iosInstallDismissed', 'true');
+    });
+
+    // ========== Init ==========
+    openDB().then(() => {
+      console.log('DB ready');
+    });
+
+    // Registrar Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>
