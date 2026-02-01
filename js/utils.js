@@ -63,3 +63,20 @@ function downloadFile(base64Data, filename) {
   link.click();
   document.body.removeChild(link);
 }
+
+// Abrir localização no mapa (Google Maps ou Apple Maps)
+function openInMaps(lat, lng) {
+  const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const url = isIOSDevice
+    ? `maps://maps.apple.com/?q=${lat},${lng}`
+    : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  window.open(url, '_blank');
+}
+
+// Obter label de precisão do GPS
+function getAccuracyLabel(meters) {
+  if (meters <= 5) return { text: 'Excelente', color: '#1e8e3e', icon: '🟢' };
+  if (meters <= 15) return { text: 'Boa', color: '#1a73e8', icon: '🔵' };
+  if (meters <= 50) return { text: 'Moderada', color: '#f9ab00', icon: '🟡' };
+  return { text: 'Baixa', color: '#d93025', icon: '🔴' };
+}

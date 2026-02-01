@@ -1,4 +1,4 @@
-const CACHE_NAME = 'geofotos-v7';
+const CACHE_NAME = 'geofotos-v8';
 const BASE_PATH = '/Geofotos';
 const urlsToCache = [
   `${BASE_PATH}/`,
@@ -13,8 +13,11 @@ const urlsToCache = [
   `${BASE_PATH}/js/capture.js`,
   `${BASE_PATH}/js/history.js`,
   `${BASE_PATH}/js/backup.js`,
+  `${BASE_PATH}/js/map.js`,
   `${BASE_PATH}/js/app.js`,
-  `${BASE_PATH}/sw.js`
+  `${BASE_PATH}/sw.js`,
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 ];
 
 // Install

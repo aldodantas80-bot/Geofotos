@@ -12,6 +12,11 @@ function initTabs() {
       if (tab.dataset.view === 'history') {
         renderHistory();
       }
+
+      if (tab.dataset.view === 'map') {
+        initMap();
+        refreshMap();
+      }
     });
   });
 }

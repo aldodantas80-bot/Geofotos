@@ -11,6 +11,8 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <title>GeoFotos</title>
 </head>
 <body>
@@ -21,6 +23,7 @@
   <div class="tabs">
     <button class="tab active" data-view="capture">Capturar</button>
     <button class="tab" data-view="history">Histórico</button>
+    <button class="tab" data-view="map">Mapa</button>
     <button class="tab" data-view="settings">Configurações</button>
   </div>
 
@@ -55,7 +58,8 @@
 
 <!-- Preview da foto capturada -->
 <div id="photoPreview" class="card" style="display: none;">
-  <img id="previewImg" class="preview-img" alt="Preview">
+  <div id="photoGallery" class="photo-gallery"></div>
+  <button type="button" class="btn btn-secondary" id="addMorePhotosBtn" style="margin-bottom: 12px;">+ Adicionar mais fotos</button>
 
   <div class="coords-display">
     <div class="label">COORDENADAS</div>
@@ -67,6 +71,15 @@
     <button type="button" class="btn-mic" id="micBtnPhoto" title="Falar observação">
       <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
     </button>
+  </div>
+
+  <div class="tags-input" style="margin-top: 8px;">
+    <div id="selectedTagsPhoto" class="selected-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;"></div>
+    <div style="display: flex; gap: 8px;">
+      <input type="text" id="tagInputPhoto" placeholder="Nova tag..." style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.05); color: var(--text);">
+      <button type="button" class="btn btn-secondary btn-small" id="addTagBtnPhoto">+</button>
+    </div>
+    <div id="suggestedTagsPhoto" class="suggested-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px;"></div>
   </div>
 
   <div class="btn-group">
@@ -91,6 +104,15 @@
     </button>
   </div>
 
+  <div class="tags-input" style="margin-top: 8px;">
+    <div id="selectedTagsVideo" class="selected-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;"></div>
+    <div style="display: flex; gap: 8px;">
+      <input type="text" id="tagInputVideo" placeholder="Nova tag..." style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.05); color: var(--text);">
+      <button type="button" class="btn btn-secondary btn-small" id="addTagBtnVideo">+</button>
+    </div>
+    <div id="suggestedTagsVideo" class="suggested-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px;"></div>
+  </div>
+
   <div class="btn-group">
     <button class="btn btn-secondary" id="cancelVideoBtn">Cancelar</button>
     <button class="btn btn-primary" id="saveVideoBtn">Salvar</button>
@@ -111,6 +133,15 @@
     </button>
   </div>
 
+  <div class="tags-input" style="margin-top: 8px;">
+    <div id="selectedTagsLocation" class="selected-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;"></div>
+    <div style="display: flex; gap: 8px;">
+      <input type="text" id="tagInputLocation" placeholder="Nova tag..." style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.05); color: var(--text);">
+      <button type="button" class="btn btn-secondary btn-small" id="addTagBtnLocation">+</button>
+    </div>
+    <div id="suggestedTagsLocation" class="suggested-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px;"></div>
+  </div>
+
   <div class="btn-group">
     <button class="btn btn-secondary" id="cancelLocationBtn">Cancelar</button>
     <button class="btn btn-primary" id="saveLocationBtn">Salvar</button>
@@ -122,12 +153,46 @@
   <!-- View: Histórico -->
 
   <div id="history" class="view">
+    <!-- Filtros de busca -->
+    <div class="card" style="padding: 12px;">
+      <input type="text" id="searchInput" placeholder="Buscar nas observações..." style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; background: rgba(255,255,255,0.05); color: var(--text);">
+      <div style="display: flex; gap: 8px;">
+        <select id="filterType" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.1); color: var(--text);">
+          <option value="all">Todos</option>
+          <option value="photo">📸 Fotos</option>
+          <option value="video">🎬 Vídeos</option>
+          <option value="location">📍 Localizações</option>
+        </select>
+        <select id="filterSort" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.1); color: var(--text);">
+          <option value="newest">Mais recentes</option>
+          <option value="oldest">Mais antigos</option>
+          <option value="withNotes">Com observações</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Modo seleção -->
+    <button class="btn btn-secondary btn-small" id="selectModeBtn" style="margin-bottom: 12px;">☑️ Selecionar</button>
+
+    <!-- Barra de seleção -->
+    <div id="selectionBar" class="selection-bar" style="display: none;">
+      <span id="selectedCount">0 selecionados</span>
+      <button class="btn btn-primary btn-small" id="shareSelectedBtn">📤 Compartilhar</button>
+      <button class="btn btn-secondary btn-small" id="cancelSelectionBtn">Cancelar</button>
+    </div>
+
     <div id="recordsList"></div>
     <div id="emptyState" class="empty-state">
       <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
       <p>Nenhum registro ainda</p>
       <p style="font-size: 13px;">Capture fotos ou localizações para começar</p>
     </div>
+  </div>
+
+  <!-- View: Mapa -->
+
+  <div id="map" class="view">
+    <div id="mapContainer" style="width: 100%; height: calc(100vh - 140px); border-radius: 12px; overflow: hidden;"></div>
   </div>
 
   <!-- View: Configurações -->
@@ -158,9 +223,40 @@
       <div class="modal-body" id="modalContent"></div>
       <div class="modal-footer">
         <button class="btn btn-secondary btn-small" id="closeModalBtn">Fechar</button>
+        <button class="btn btn-secondary btn-small" id="editRecordBtn">✏️ Editar</button>
         <button class="btn btn-danger btn-small" id="deleteRecordBtn">Excluir</button>
         <button class="btn btn-secondary btn-small" id="savePhotoModalBtn" style="display:none;">💾 Foto</button>
         <button class="btn btn-primary btn-small" id="shareRecordBtn">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de edição -->
+
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-header">Editar Registro</div>
+      <div class="modal-body">
+        <label style="font-size: 12px; color: var(--text-secondary);">Observações:</label>
+        <div class="textarea-wrapper">
+          <textarea id="editNotesInput" placeholder="Observações..."></textarea>
+          <button type="button" class="btn-mic" id="micBtnEdit" title="Falar observação">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+          </button>
+        </div>
+        <div id="editTagsContainer" style="margin-top: 12px;">
+          <label style="font-size: 12px; color: var(--text-secondary);">Tags:</label>
+          <div id="editSelectedTags" class="selected-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0;"></div>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="editTagInput" placeholder="Nova tag..." style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.05); color: var(--text);">
+            <button type="button" class="btn btn-secondary btn-small" id="addEditTagBtn">+</button>
+          </div>
+          <div id="editSuggestedTags" class="suggested-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-small" id="cancelEditBtn">Cancelar</button>
+        <button class="btn btn-primary btn-small" id="saveEditBtn">Salvar</button>
       </div>
     </div>
   </div>
@@ -195,6 +291,7 @@
   <script src="js/capture.js"></script>
   <script src="js/history.js"></script>
   <script src="js/backup.js"></script>
+  <script src="js/map.js"></script>
   <script src="js/app.js"></script>
 
 </body>

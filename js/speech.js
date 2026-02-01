@@ -94,4 +94,13 @@ function initSpeechRecognition() {
       startRecording(document.getElementById('videoNotesInput'), this);
     }
   });
+
+  // Microfone no modal de edição
+  document.getElementById('micBtnEdit').addEventListener('click', function() {
+    if (this.classList.contains('recording')) {
+      stopRecording();
+    } else {
+      startRecording(document.getElementById('editNotesInput'), this);
+    }
+  });
 }

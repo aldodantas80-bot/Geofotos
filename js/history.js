@@ -2,11 +2,104 @@
 
 let currentModalRecordId = null;
 
+// Filtros
+let currentFilter = { search: '', type: 'all', sort: 'newest', tag: '' };
+
+// Modo seleção
+let selectionMode = false;
+let selectedIds = [];
+
+// Edição
+let editingRecordId = null;
+let editingTags = [];
+
+// Função para filtrar registros
+function filterRecords(records) {
+  let filtered = [...records];
+
+  // Filtro por busca
+  if (currentFilter.search) {
+    const search = currentFilter.search.toLowerCase();
+    filtered = filtered.filter(r =>
+      (r.notes && r.notes.toLowerCase().includes(search)) ||
+      (r.tags && r.tags.some(t => t.toLowerCase().includes(search)))
+    );
+  }
+
+  // Filtro por tipo
+  if (currentFilter.type !== 'all') {
+    filtered = filtered.filter(r => r.type === currentFilter.type);
+  }
+
+  // Filtro por tag
+  if (currentFilter.tag) {
+    filtered = filtered.filter(r => r.tags && r.tags.includes(currentFilter.tag));
+  }
+
+  // Ordenação
+  if (currentFilter.sort === 'newest') {
+    filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } else if (currentFilter.sort === 'oldest') {
+    filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  } else if (currentFilter.sort === 'withNotes') {
+    filtered.sort((a, b) => {
+      const aHasNotes = a.notes && a.notes.trim().length > 0;
+      const bHasNotes = b.notes && b.notes.trim().length > 0;
+      if (aHasNotes && !bHasNotes) return -1;
+      if (!aHasNotes && bHasNotes) return 1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+  }
+
+  return filtered;
+}
+
+// Obter foto principal (compatível com registros antigos)
+function getMainPhoto(record) {
+  if (record.photos && record.photos.length > 0) {
+    return record.photos[0];
+  }
+  if (record.photo) {
+    return record.photo;
+  }
+  return null;
+}
+
+// Obter todas as fotos (compatível com registros antigos)
+function getAllPhotos(record) {
+  if (record.photos && record.photos.length > 0) {
+    return record.photos;
+  }
+  if (record.photo) {
+    return [record.photo];
+  }
+  return [];
+}
+
+// Formatar indicador de precisão
+function formatAccuracyBadge(accuracy) {
+  if (!accuracy) return '';
+  const label = getAccuracyLabel(accuracy);
+  return `<span style="font-size: 10px; color: ${label.color};">${label.icon} ~${Math.round(accuracy)}m</span>`;
+}
+
+// Renderizar tags
+function renderRecordTags(tags) {
+  if (!tags || tags.length === 0) return '';
+  return `<div class="record-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px;">
+    ${tags.map(tag => `<span class="tag" style="font-size: 10px; padding: 2px 6px;">${tag}</span>`).join('')}
+  </div>`;
+}
+
 // Renderizar histórico
 async function renderHistory() {
-  const records = await getAllRecords();
+  const allRecords = await getAllRecords();
+  const records = filterRecords(allRecords);
   const list = document.getElementById('recordsList');
   const empty = document.getElementById('emptyState');
+
+  // Atualiza barra de seleção
+  updateSelectionBar();
 
   if (records.length === 0) {
     list.innerHTML = '';
@@ -20,8 +113,14 @@ async function renderHistory() {
     let typeLabel = '';
     let saveBtn = '';
 
-    if (r.type === 'photo') {
-      mediaHtml = `<img src="${r.photo}" alt="Foto">`;
+    const mainPhoto = getMainPhoto(r);
+    const photoCount = getAllPhotos(r).length;
+
+    if (r.type === 'photo' && mainPhoto) {
+      mediaHtml = `<div style="position: relative;">
+        <img src="${mainPhoto}" alt="Foto">
+        ${photoCount > 1 ? `<span style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">+${photoCount - 1}</span>` : ''}
+      </div>`;
       typeLabel = '📸 Foto';
       saveBtn = `<button class="btn btn-secondary btn-small" onclick="saveMediaToGallery(${r.id})">💾 Foto</button>`;
     } else if (r.type === 'video') {
@@ -32,20 +131,27 @@ async function renderHistory() {
       typeLabel = '📍 Localização';
     }
 
+    const isSelected = selectedIds.includes(r.id);
+    const selectableClass = selectionMode ? 'selectable' : '';
+    const selectedClass = isSelected ? 'selected' : '';
+
     return `
-      <div class="record-item" data-id="${r.id}">
+      <div class="record-item ${selectableClass} ${selectedClass}" data-id="${r.id}" onclick="${selectionMode ? `toggleRecordSelection(${r.id})` : ''}">
+        ${selectionMode ? '<div class="select-checkbox"></div>' : ''}
         ${mediaHtml}
         <div class="record-content">
           <span class="record-type ${r.type}">${typeLabel}</span>
-          <div class="record-date">${new Date(r.createdAt).toLocaleString('pt-BR')}</div>
-          <div class="record-coords" onclick="copyToClipboard('${formatCoords(r.lat, r.lng)}')" style="cursor:pointer;" title="Clique para copiar">
+          <div class="record-date">${new Date(r.createdAt).toLocaleString('pt-BR')} ${formatAccuracyBadge(r.accuracy)}</div>
+          <div class="record-coords" onclick="event.stopPropagation(); copyToClipboard('${formatCoords(r.lat, r.lng)}')" style="cursor:pointer;" title="Clique para copiar">
             ${formatCoords(r.lat, r.lng)}
           </div>
           ${r.notes ? `<div class="record-notes">${r.notes}</div>` : ''}
+          ${renderRecordTags(r.tags)}
           <div class="btn-group">
-            <button class="btn btn-secondary btn-small" onclick="copyRecordData(${r.id})">📋 Copiar</button>
-            ${saveBtn}
-            <button class="btn btn-primary btn-small" onclick="shareRecord(${r.id})">📤 Enviar</button>
+            <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); copyRecordData(${r.id})">📋 Copiar</button>
+            <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); openInMaps(${r.lat}, ${r.lng})">🗺️ Mapa</button>
+            ${saveBtn ? saveBtn.replace('onclick="', 'onclick="event.stopPropagation(); ') : ''}
+            <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); shareRecord(${r.id})">📤 Enviar</button>
           </div>
         </div>
       </div>
@@ -56,7 +162,17 @@ async function renderHistory() {
 // Copiar dados do registro
 async function copyRecordData(id) {
   const record = await getRecord(id);
-  const text = `📍 Coordenadas: ${formatCoords(record.lat, record.lng)}${record.notes ? `\n📝 Observações: ${record.notes}` : ''}\n📅 ${new Date(record.createdAt).toLocaleString('pt-BR')}`;
+  let text = `📍 Coordenadas: ${formatCoords(record.lat, record.lng)}`;
+  if (record.accuracy) {
+    text += ` (precisão: ~${Math.round(record.accuracy)}m)`;
+  }
+  if (record.notes) {
+    text += `\n📝 Observações: ${record.notes}`;
+  }
+  if (record.tags && record.tags.length > 0) {
+    text += `\n🏷️ Tags: ${record.tags.join(', ')}`;
+  }
+  text += `\n📅 ${new Date(record.createdAt).toLocaleString('pt-BR')}`;
   await copyToClipboard(text);
 }
 
@@ -67,9 +183,12 @@ async function saveMediaToGallery(id) {
 
   const dateStr = new Date(record.createdAt).toISOString().slice(0, 10);
   if (record.type === 'photo') {
-    const filename = `geofoto_${dateStr}_${record.id}.jpg`;
-    downloadFile(record.photo, filename);
-    showToast('Foto salva!');
+    const photos = getAllPhotos(record);
+    photos.forEach((photo, index) => {
+      const filename = `geofoto_${dateStr}_${record.id}_${index + 1}.jpg`;
+      downloadFile(photo, filename);
+    });
+    showToast(`${photos.length} foto(s) salva(s)!`);
   } else if (record.type === 'video') {
     const filename = `geovideo_${dateStr}_${record.id}.mp4`;
     downloadFile(record.video, filename);
@@ -80,12 +199,24 @@ async function saveMediaToGallery(id) {
 // Compartilhar registro
 async function shareRecord(id) {
   const record = await getRecord(id);
-  const text = `📍 Coordenadas: ${formatCoords(record.lat, record.lng)}${record.notes ? `\n📝 Observações: ${record.notes}` : ''}\n📅 ${new Date(record.createdAt).toLocaleString('pt-BR')}`;
+  let text = `📍 Coordenadas: ${formatCoords(record.lat, record.lng)}`;
+  if (record.accuracy) {
+    text += ` (precisão: ~${Math.round(record.accuracy)}m)`;
+  }
+  if (record.notes) {
+    text += `\n📝 Observações: ${record.notes}`;
+  }
+  if (record.tags && record.tags.length > 0) {
+    text += `\n🏷️ Tags: ${record.tags.join(', ')}`;
+  }
+  text += `\n📅 ${new Date(record.createdAt).toLocaleString('pt-BR')}`;
+
+  const mainPhoto = getMainPhoto(record);
 
   if ((record.type === 'photo' || record.type === 'video') && navigator.canShare) {
     try {
       // Converter base64 para blob
-      const mediaData = record.type === 'photo' ? record.photo : record.video;
+      const mediaData = record.type === 'photo' ? mainPhoto : record.video;
       const response = await fetch(mediaData);
       const blob = await response.blob();
       const isVideo = record.type === 'video';
@@ -107,7 +238,7 @@ async function shareRecord(id) {
       // Fallback iOS: baixar mídia + copiar texto
       if (isIOS && (record.type === 'photo' || record.type === 'video')) {
         await copyToClipboard(text);
-        const mediaData = record.type === 'photo' ? record.photo : record.video;
+        const mediaData = record.type === 'photo' ? mainPhoto : record.video;
         const ext = record.type === 'video' ? 'mp4' : 'jpg';
         downloadFile(mediaData, `geo${record.type}_${Date.now()}.${ext}`);
         showToast(`Texto copiado! ${record.type === 'video' ? 'Vídeo' : 'Foto'} salvo.`);
@@ -133,9 +264,197 @@ async function shareRecord(id) {
   }
 }
 
+// ========== Modo Seleção ==========
+
+function toggleSelectionMode() {
+  selectionMode = !selectionMode;
+  selectedIds = [];
+  document.getElementById('selectModeBtn').textContent = selectionMode ? '✖️ Cancelar' : '☑️ Selecionar';
+  renderHistory();
+}
+
+function toggleRecordSelection(id) {
+  const index = selectedIds.indexOf(id);
+  if (index > -1) {
+    selectedIds.splice(index, 1);
+  } else {
+    selectedIds.push(id);
+  }
+  renderHistory();
+}
+
+function updateSelectionBar() {
+  const bar = document.getElementById('selectionBar');
+  const count = document.getElementById('selectedCount');
+
+  if (selectionMode && selectedIds.length > 0) {
+    bar.style.display = 'flex';
+    count.textContent = `${selectedIds.length} selecionado(s)`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+async function shareSelectedRecords() {
+  if (selectedIds.length === 0) {
+    showToast('Selecione pelo menos um registro');
+    return;
+  }
+
+  let combinedText = '📍 GeoFotos - Registros Selecionados\n\n';
+
+  for (const id of selectedIds) {
+    const record = await getRecord(id);
+    const icon = record.type === 'photo' ? '📸' : record.type === 'video' ? '🎬' : '📍';
+    combinedText += `${icon} ${new Date(record.createdAt).toLocaleString('pt-BR')}\n`;
+    combinedText += `   📍 ${formatCoords(record.lat, record.lng)}`;
+    if (record.accuracy) {
+      combinedText += ` (~${Math.round(record.accuracy)}m)`;
+    }
+    combinedText += '\n';
+    if (record.notes) {
+      combinedText += `   📝 ${record.notes}\n`;
+    }
+    if (record.tags && record.tags.length > 0) {
+      combinedText += `   🏷️ ${record.tags.join(', ')}\n`;
+    }
+    combinedText += '\n';
+  }
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'GeoFotos - Registros',
+        text: combinedText
+      });
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        await copyToClipboard(combinedText);
+      }
+    }
+  } else {
+    await copyToClipboard(combinedText);
+  }
+
+  selectionMode = false;
+  selectedIds = [];
+  document.getElementById('selectModeBtn').textContent = '☑️ Selecionar';
+  renderHistory();
+}
+
+// ========== Edição ==========
+
+async function openEditModal(id) {
+  const record = await getRecord(id);
+  editingRecordId = id;
+  editingTags = record.tags ? [...record.tags] : [];
+
+  document.getElementById('editNotesInput').value = record.notes || '';
+  renderEditTags();
+  renderEditSuggestedTags();
+
+  document.getElementById('editModal').classList.add('show');
+}
+
+function renderEditTags() {
+  const container = document.getElementById('editSelectedTags');
+  if (editingTags.length === 0) {
+    container.innerHTML = '<span style="color: var(--text-secondary); font-size: 12px;">Nenhuma tag</span>';
+    return;
+  }
+  container.innerHTML = editingTags.map(tag => `
+    <span class="tag">
+      ${tag}
+      <span class="tag-remove" onclick="removeEditTag('${tag}')">×</span>
+    </span>
+  `).join('');
+}
+
+async function renderEditSuggestedTags() {
+  const container = document.getElementById('editSuggestedTags');
+  const existingTags = await getAllTags();
+  const availableTags = existingTags.filter(tag => !editingTags.includes(tag));
+
+  if (availableTags.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = availableTags.slice(0, 10).map(tag => `
+    <span class="suggested-tag" onclick="addEditTag('${tag}')">${tag}</span>
+  `).join('');
+}
+
+function addEditTag(tag) {
+  if (!editingTags.includes(tag)) {
+    editingTags.push(tag);
+    addTagToDB(tag);
+    renderEditTags();
+    renderEditSuggestedTags();
+  }
+  document.getElementById('editTagInput').value = '';
+}
+
+function removeEditTag(tag) {
+  const index = editingTags.indexOf(tag);
+  if (index > -1) {
+    editingTags.splice(index, 1);
+    renderEditTags();
+    renderEditSuggestedTags();
+  }
+}
+
+async function saveEdit() {
+  if (!editingRecordId) return;
+
+  const notes = document.getElementById('editNotesInput').value.trim();
+
+  await updateRecord(editingRecordId, {
+    notes: notes,
+    tags: [...editingTags]
+  });
+
+  document.getElementById('editModal').classList.remove('show');
+  document.getElementById('detailModal').classList.remove('show');
+  showToast('Registro atualizado!');
+  renderHistory();
+
+  editingRecordId = null;
+  editingTags = [];
+}
+
 // Inicializar modal e eventos do histórico
 function initHistory() {
+  // Filtros
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    currentFilter.search = e.target.value;
+    renderHistory();
+  });
+
+  document.getElementById('filterType').addEventListener('change', (e) => {
+    currentFilter.type = e.target.value;
+    renderHistory();
+  });
+
+  document.getElementById('filterSort').addEventListener('change', (e) => {
+    currentFilter.sort = e.target.value;
+    renderHistory();
+  });
+
+  // Modo seleção
+  document.getElementById('selectModeBtn').addEventListener('click', toggleSelectionMode);
+  document.getElementById('cancelSelectionBtn').addEventListener('click', () => {
+    selectionMode = false;
+    selectedIds = [];
+    document.getElementById('selectModeBtn').textContent = '☑️ Selecionar';
+    renderHistory();
+  });
+  document.getElementById('shareSelectedBtn').addEventListener('click', shareSelectedRecords);
+
+  // Modal de detalhes
   document.getElementById('recordsList').addEventListener('click', async (e) => {
+    if (selectionMode) return;
+
     const item = e.target.closest('.record-item');
     if (!item || e.target.closest('.btn')) return;
 
@@ -157,18 +476,40 @@ function initHistory() {
 
     let mediaHtml = '';
     if (record.type === 'photo') {
-      mediaHtml = `<img src="${record.photo}" style="width:100%;border-radius:8px;margin-bottom:12px;">`;
+      const photos = getAllPhotos(record);
+      if (photos.length === 1) {
+        mediaHtml = `<img src="${photos[0]}" style="width:100%;border-radius:8px;margin-bottom:12px;">`;
+      } else {
+        mediaHtml = `<div class="photo-gallery" style="margin-bottom:12px;">
+          ${photos.map(photo => `
+            <div class="photo-gallery-item">
+              <img src="${photo}" alt="Foto">
+            </div>
+          `).join('')}
+        </div>`;
+      }
     } else if (record.type === 'video') {
       mediaHtml = `<video src="${record.video}" controls style="width:100%;border-radius:8px;margin-bottom:12px;"></video>`;
     }
+
+    const accuracyHtml = record.accuracy ?
+      `<div style="margin-top:8px;font-size:12px;">${formatAccuracyBadge(record.accuracy)}</div>` : '';
+
+    const tagsHtml = record.tags && record.tags.length > 0 ?
+      `<div style="margin-top:12px;"><strong>Tags:</strong>${renderRecordTags(record.tags)}</div>` : '';
 
     const content = `
       ${mediaHtml}
       <div class="coords-display" onclick="copyToClipboard('${formatCoords(record.lat, record.lng)}')" style="cursor:pointer;">
         <div class="label">COORDENADAS (clique para copiar)</div>
         ${formatCoords(record.lat, record.lng)}
+        ${accuracyHtml}
       </div>
       ${record.notes ? `<div style="margin-top:12px;"><strong>Observações:</strong><p style="margin-top:4px;white-space:pre-wrap;">${record.notes}</p></div>` : ''}
+      ${tagsHtml}
+      <div style="margin-top:12px;">
+        <button class="btn btn-secondary btn-small" onclick="openInMaps(${record.lat}, ${record.lng})">🗺️ Abrir no Mapa</button>
+      </div>
       <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);">${new Date(record.createdAt).toLocaleString('pt-BR')}</div>
     `;
 
@@ -197,9 +538,47 @@ function initHistory() {
     saveMediaToGallery(currentModalRecordId);
   });
 
+  document.getElementById('editRecordBtn').addEventListener('click', () => {
+    openEditModal(currentModalRecordId);
+  });
+
   document.getElementById('detailModal').addEventListener('click', (e) => {
     if (e.target.classList.contains('modal-overlay')) {
       document.getElementById('detailModal').classList.remove('show');
+    }
+  });
+
+  // Modal de edição
+  document.getElementById('cancelEditBtn').addEventListener('click', () => {
+    document.getElementById('editModal').classList.remove('show');
+    editingRecordId = null;
+    editingTags = [];
+  });
+
+  document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
+
+  document.getElementById('addEditTagBtn').addEventListener('click', () => {
+    const input = document.getElementById('editTagInput');
+    const tag = input.value.trim();
+    if (tag) {
+      addEditTag(tag);
+    }
+  });
+
+  document.getElementById('editTagInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const tag = e.target.value.trim();
+      if (tag) {
+        addEditTag(tag);
+      }
+    }
+  });
+
+  document.getElementById('editModal').addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay')) {
+      document.getElementById('editModal').classList.remove('show');
+      editingRecordId = null;
+      editingTags = [];
     }
   });
 }
