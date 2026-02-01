@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -17,353 +18,396 @@
       padding: 0;
     }
 
-    :root {
-      --primary: #1a73e8;
-      --primary-dark: #1557b0;
-      --danger: #d93025;
-      --success: #1e8e3e;
-      --bg: #f8f9fa;
-      --card-bg: #ffffff;
-      --text: #202124;
-      --text-secondary: #5f6368;
-      --border: #dadce0;
-      --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-    }
+```
+:root {
+  --primary: #1a73e8;
+  --primary-dark: #1557b0;
+  --danger: #d93025;
+  --success: #1e8e3e;
+  --bg: #f8f9fa;
+  --card-bg: #ffffff;
+  --text: #202124;
+  --text-secondary: #5f6368;
+  --border: #dadce0;
+  --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding-bottom: 80px;
-    }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
 
-    header {
-      background: var(--primary);
-      color: white;
-      padding: 16px 20px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: var(--shadow);
-    }
+header {
+  background: var(--primary);
+  color: white;
+  padding: 16px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
 
-    header h1 {
-      font-size: 20px;
-      font-weight: 500;
-    }
+header h1 {
+  font-size: 20px;
+  font-weight: 500;
+}
 
-    .tabs {
-      display: flex;
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--border);
-    }
+.tabs {
+  display: flex;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+}
 
-    .tab {
-      flex: 1;
-      padding: 14px;
-      text-align: center;
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      border: none;
-      background: none;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.2s;
-    }
+.tab {
+  flex: 1;
+  padding: 14px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
 
-    .tab.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
-    }
+.tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
 
-    .view {
-      display: none;
-      padding: 16px;
-    }
+.view {
+  display: none;
+  padding: 16px;
+}
 
-    .view.active {
-      display: block;
-    }
+.view.active {
+  display: block;
+}
 
-    .card {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 16px;
-      box-shadow: var(--shadow);
-    }
+.card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
 
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      width: 100%;
-    }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
 
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-    }
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
 
-    .btn-primary:hover {
-      background: var(--primary-dark);
-    }
+.btn-primary:hover {
+  background: var(--primary-dark);
+}
 
-    .btn-secondary {
-      background: var(--bg);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
+.btn-secondary {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
 
-    .btn-success {
-      background: var(--success);
-      color: white;
-    }
+.btn-success {
+  background: var(--success);
+  color: white;
+}
 
-    .btn-danger {
-      background: var(--danger);
-      color: white;
-    }
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
 
-    .btn-small {
-      padding: 8px 16px;
-      font-size: 12px;
-      width: auto;
-    }
+.btn-small {
+  padding: 8px 16px;
+  font-size: 12px;
+  width: auto;
+}
 
-    .btn-group {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
+.btn-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
 
-    .btn-group .btn {
-      flex: 1;
-    }
+.btn-group .btn {
+  flex: 1;
+}
 
-    input[type="file"] {
-      display: none;
-    }
+.textarea-wrapper {
+  position: relative;
+}
 
-    .preview-img {
-      width: 100%;
-      max-height: 300px;
-      object-fit: cover;
-      border-radius: 8px;
-      margin-bottom: 12px;
-    }
+.textarea-wrapper textarea {
+  padding-right: 50px;
+}
 
-    .coords-display {
-      background: var(--bg);
-      padding: 12px;
-      border-radius: 8px;
-      font-family: monospace;
-      font-size: 14px;
-      margin: 12px 0;
-      word-break: break-all;
-    }
+.btn-mic {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
 
-    .coords-display .label {
-      font-size: 11px;
-      color: var(--text-secondary);
-      margin-bottom: 4px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
+.btn-mic:hover {
+  background: var(--border);
+}
 
-    textarea {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 14px;
-      font-family: inherit;
-      resize: vertical;
-      min-height: 80px;
-    }
+.btn-mic.recording {
+  background: var(--danger);
+  color: white;
+  animation: pulse 1s infinite;
+}
 
-    textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
 
-    .record-item {
-      background: var(--card-bg);
-      border-radius: 12px;
-      margin-bottom: 12px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-    }
+input[type="file"] {
+  display: none;
+}
 
-    .record-item img {
-      width: 100%;
-      height: 150px;
-      object-fit: cover;
-    }
+.preview-img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
 
-    .record-content {
-      padding: 12px;
-    }
+.coords-display {
+  background: var(--bg);
+  padding: 12px;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 14px;
+  margin: 12px 0;
+  word-break: break-all;
+}
 
-    .record-type {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 500;
-      margin-bottom: 8px;
-    }
+.coords-display .label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
 
-    .record-type.photo {
-      background: #e8f0fe;
-      color: var(--primary);
-    }
+textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+}
 
-    .record-type.location {
-      background: #e6f4ea;
-      color: var(--success);
-    }
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
 
-    .record-date {
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
-    }
+.record-item {
+  background: var(--card-bg);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
 
-    .record-coords {
-      font-family: monospace;
-      font-size: 13px;
-      background: var(--bg);
-      padding: 8px;
-      border-radius: 6px;
-      margin-bottom: 8px;
-    }
+.record-item img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
 
-    .record-notes {
-      font-size: 14px;
-      color: var(--text);
-      margin-bottom: 12px;
-      white-space: pre-wrap;
-    }
+.record-content {
+  padding: 12px;
+}
 
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-secondary);
-    }
+.record-type {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
 
-    .empty-state svg {
-      width: 64px;
-      height: 64px;
-      margin-bottom: 16px;
-      opacity: 0.5;
-    }
+.record-type.photo {
+  background: #e8f0fe;
+  color: var(--primary);
+}
 
-    .toast {
-      position: fixed;
-      bottom: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #323232;
-      color: white;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 14px;
-      z-index: 1000;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
+.record-type.location {
+  background: #e6f4ea;
+  color: var(--success);
+}
 
-    .toast.show {
-      opacity: 1;
-    }
+.record-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
 
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      border-top-color: white;
-      animation: spin 1s linear infinite;
-    }
+.record-coords {
+  font-family: monospace;
+  font-size: 13px;
+  background: var(--bg);
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+.record-notes {
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 12px;
+  white-space: pre-wrap;
+}
 
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}
 
-    .modal-overlay.show {
-      display: flex;
-    }
+.empty-state svg {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
 
-    .modal {
-      background: var(--card-bg);
-      border-radius: 16px;
-      width: 100%;
-      max-width: 400px;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
+.toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #323232;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
 
-    .modal-header {
-      padding: 20px;
-      border-bottom: 1px solid var(--border);
-      font-weight: 500;
-    }
+.toast.show {
+  opacity: 1;
+}
 
-    .modal-body {
-      padding: 20px;
-    }
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+}
 
-    .modal-footer {
-      padding: 16px 20px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      gap: 8px;
-      justify-content: flex-end;
-    }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
-    .install-prompt {
-      display: none;
-      position: fixed;
-      bottom: 90px;
-      left: 16px;
-      right: 16px;
-      background: var(--card-bg);
-      padding: 16px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      z-index: 150;
-    }
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
 
-    .install-prompt.show {
-      display: block;
-    }
+.modal-overlay.show {
+  display: flex;
+}
 
-    .install-prompt p {
-      margin-bottom: 12px;
-      font-size: 14px;
-    }
+.modal {
+  background: var(--card-bg);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 500;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.install-prompt {
+  display: none;
+  position: fixed;
+  bottom: 90px;
+  left: 16px;
+  right: 16px;
+  background: var(--card-bg);
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 150;
+}
+
+.install-prompt.show {
+  display: block;
+}
+
+.install-prompt p {
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+```
+
   </style>
 </head>
 <body>
@@ -377,6 +421,7 @@
   </div>
 
   <!-- View: Capturar -->
+
   <div id="capture" class="view active">
     <div class="card">
       <h3 style="margin-bottom: 16px;">📸 Foto + Localização</h3>
@@ -387,48 +432,62 @@
       </button>
     </div>
 
-    <div class="card">
-      <h3 style="margin-bottom: 16px;">📍 Apenas Localização</h3>
-      <button class="btn btn-success" id="getLocationBtn">
-        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
-        Capturar Localização
-      </button>
-    </div>
+```
+<div class="card">
+  <h3 style="margin-bottom: 16px;">📍 Apenas Localização</h3>
+  <button class="btn btn-success" id="getLocationBtn">
+    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+    Capturar Localização
+  </button>
+</div>
 
-    <!-- Preview da foto capturada -->
-    <div id="photoPreview" class="card" style="display: none;">
-      <img id="previewImg" class="preview-img" alt="Preview">
-      
-      <div class="coords-display">
-        <div class="label">COORDENADAS</div>
-        <span id="previewCoords">Obtendo localização...</span>
-      </div>
-      
-      <textarea id="notesInput" placeholder="Adicione observações sobre a foto/local..."></textarea>
-      
-      <div class="btn-group">
-        <button class="btn btn-secondary" id="cancelPhotoBtn">Cancelar</button>
-        <button class="btn btn-primary" id="savePhotoBtn">Salvar</button>
-      </div>
-    </div>
+<!-- Preview da foto capturada -->
+<div id="photoPreview" class="card" style="display: none;">
+  <img id="previewImg" class="preview-img" alt="Preview">
+  
+  <div class="coords-display">
+    <div class="label">COORDENADAS</div>
+    <span id="previewCoords">Obtendo localização...</span>
+  </div>
+  
+  <div class="textarea-wrapper">
+    <textarea id="notesInput" placeholder="Adicione observações sobre a foto/local..."></textarea>
+    <button type="button" class="btn-mic" id="micBtnPhoto" title="Falar observação">
+      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+    </button>
+  </div>
+  
+  <div class="btn-group">
+    <button class="btn btn-secondary" id="cancelPhotoBtn">Cancelar</button>
+    <button class="btn btn-primary" id="savePhotoBtn">Salvar</button>
+  </div>
+</div>
 
-    <!-- Preview apenas localização -->
-    <div id="locationPreview" class="card" style="display: none;">
-      <div class="coords-display">
-        <div class="label">COORDENADAS</div>
-        <span id="locationCoords">Obtendo localização...</span>
-      </div>
-      
-      <textarea id="locationNotesInput" placeholder="Adicione observações sobre este local..."></textarea>
-      
-      <div class="btn-group">
-        <button class="btn btn-secondary" id="cancelLocationBtn">Cancelar</button>
-        <button class="btn btn-primary" id="saveLocationBtn">Salvar</button>
-      </div>
-    </div>
+<!-- Preview apenas localização -->
+<div id="locationPreview" class="card" style="display: none;">
+  <div class="coords-display">
+    <div class="label">COORDENADAS</div>
+    <span id="locationCoords">Obtendo localização...</span>
+  </div>
+  
+  <div class="textarea-wrapper">
+    <textarea id="locationNotesInput" placeholder="Adicione observações sobre este local..."></textarea>
+    <button type="button" class="btn-mic" id="micBtnLocation" title="Falar observação">
+      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+    </button>
+  </div>
+  
+  <div class="btn-group">
+    <button class="btn btn-secondary" id="cancelLocationBtn">Cancelar</button>
+    <button class="btn btn-primary" id="saveLocationBtn">Salvar</button>
+  </div>
+</div>
+```
+
   </div>
 
   <!-- View: Histórico -->
+
   <div id="history" class="view">
     <div id="recordsList"></div>
     <div id="emptyState" class="empty-state">
@@ -439,6 +498,7 @@
   </div>
 
   <!-- Modal de detalhes -->
+
   <div class="modal-overlay" id="detailModal">
     <div class="modal">
       <div class="modal-header">Detalhes do Registro</div>
@@ -453,9 +513,11 @@
   </div>
 
   <!-- Toast -->
+
   <div class="toast" id="toast"></div>
 
   <!-- Install prompt Android -->
+
   <div class="install-prompt" id="installPrompt">
     <p><strong>Instalar GeoFotos?</strong><br>Adicione à tela inicial para acesso rápido.</p>
     <div class="btn-group">
@@ -465,6 +527,7 @@
   </div>
 
   <!-- Install prompt iOS -->
+
   <div class="install-prompt" id="iosInstallPrompt">
     <p><strong>Instalar GeoFotos</strong><br>Toque em <span style="font-size:18px;">⬆️</span> e depois em <strong>"Adicionar à Tela de Início"</strong></p>
     <div class="btn-group">
@@ -542,7 +605,7 @@
     function getCurrentPosition() {
       return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
-          reject(new Error('Geolocalização não suportada'));
+          reject(new Error('Geolocalização não suportada neste navegador'));
           return;
         }
         
@@ -552,8 +615,24 @@
             lng: pos.coords.longitude,
             accuracy: pos.coords.accuracy
           }),
-          (err) => reject(err),
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          (err) => {
+            let msg;
+            switch(err.code) {
+              case err.PERMISSION_DENIED:
+                msg = 'Permissão negada. Vá em Ajustes > Safari > Localização e permita.';
+                break;
+              case err.POSITION_UNAVAILABLE:
+                msg = 'Localização indisponível. Verifique se o GPS está ativado.';
+                break;
+              case err.TIMEOUT:
+                msg = 'Tempo esgotado. Tente novamente em local com melhor sinal.';
+                break;
+              default:
+                msg = 'Erro desconhecido ao obter localização.';
+            }
+            reject(new Error(msg));
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
       });
     }
@@ -572,9 +651,36 @@
 
     async function copyToClipboard(text) {
       try {
-        await navigator.clipboard.writeText(text);
-        showToast('Copiado!');
-      } catch {
+        // Tenta API moderna primeiro
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          showToast('Copiado!');
+          return;
+        }
+      } catch (e) {
+        console.log('Clipboard API falhou, tentando fallback');
+      }
+      
+      // Fallback: textarea temporário
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        
+        const success = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        
+        if (success) {
+          showToast('Copiado!');
+        } else {
+          showToast('Erro ao copiar');
+        }
+      } catch (err) {
         showToast('Erro ao copiar');
       }
     }
@@ -624,7 +730,7 @@
           currentPhotoCoords = pos;
           previewCoords.textContent = formatCoords(pos.lat, pos.lng);
         } catch (err) {
-          previewCoords.textContent = 'Erro ao obter localização';
+          previewCoords.textContent = err.message;
           currentPhotoCoords = null;
         }
       };
@@ -677,7 +783,7 @@
         currentLocationCoords = pos;
         locationCoords.textContent = formatCoords(pos.lat, pos.lng);
       } catch (err) {
-        locationCoords.textContent = 'Erro ao obter localização';
+        locationCoords.textContent = err.message;
         currentLocationCoords = null;
       }
     });
@@ -919,6 +1025,94 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
     }
+
+    // ========== Speech Recognition (Voz para Texto) ==========
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let activeTextarea = null;
+    let activeMicBtn = null;
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        if (activeTextarea) {
+          // Adiciona ao texto existente
+          const currentText = activeTextarea.value;
+          activeTextarea.value = currentText ? `${currentText} ${transcript}` : transcript;
+        }
+        stopRecording();
+      };
+
+      recognition.onerror = (event) => {
+        console.log('Erro no reconhecimento:', event.error);
+        let msg = 'Erro ao reconhecer voz';
+        if (event.error === 'not-allowed') {
+          msg = 'Permissão de microfone negada';
+        } else if (event.error === 'no-speech') {
+          msg = 'Nenhuma fala detectada';
+        }
+        showToast(msg);
+        stopRecording();
+      };
+
+      recognition.onend = () => {
+        stopRecording();
+      };
+    }
+
+    function startRecording(textarea, micBtn) {
+      if (!recognition) {
+        showToast('Reconhecimento de voz não suportado');
+        return;
+      }
+
+      activeTextarea = textarea;
+      activeMicBtn = micBtn;
+      micBtn.classList.add('recording');
+      
+      try {
+        recognition.start();
+        showToast('Ouvindo...');
+      } catch (e) {
+        showToast('Erro ao iniciar gravação');
+        stopRecording();
+      }
+    }
+
+    function stopRecording() {
+      if (activeMicBtn) {
+        activeMicBtn.classList.remove('recording');
+      }
+      activeMicBtn = null;
+      activeTextarea = null;
+      
+      try {
+        if (recognition) recognition.stop();
+      } catch (e) {}
+    }
+
+    // Event listeners para botões de microfone
+    document.getElementById('micBtnPhoto').addEventListener('click', function() {
+      if (this.classList.contains('recording')) {
+        stopRecording();
+      } else {
+        startRecording(document.getElementById('notesInput'), this);
+      }
+    });
+
+    document.getElementById('micBtnLocation').addEventListener('click', function() {
+      if (this.classList.contains('recording')) {
+        stopRecording();
+      } else {
+        startRecording(document.getElementById('locationNotesInput'), this);
+      }
+    });
   </script>
+
 </body>
 </html>
