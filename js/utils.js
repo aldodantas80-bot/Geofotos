@@ -73,10 +73,10 @@ function openInMaps(lat, lng) {
   window.open(url, '_blank');
 }
 
-// Obter label de precisão do GPS
+// Obter label de precisão do GPS (cores com bom contraste)
 function getAccuracyLabel(meters) {
-  if (meters <= 5) return { text: 'Excelente', color: '#1e8e3e', icon: '🟢' };
-  if (meters <= 15) return { text: 'Boa', color: '#1a73e8', icon: '🔵' };
-  if (meters <= 50) return { text: 'Moderada', color: '#f9ab00', icon: '🟡' };
-  return { text: 'Baixa', color: '#d93025', icon: '🔴' };
+  if (meters <= 5) return { text: 'Excelente', color: '#4ade80', icon: '🟢' };
+  if (meters <= 15) return { text: 'Boa', color: '#60a5fa', icon: '🔵' };
+  if (meters <= 50) return { text: 'Moderada', color: '#fbbf24', icon: '🟡' };
+  return { text: 'Baixa', color: '#f87171', icon: '🔴' };
 }
