@@ -409,11 +409,18 @@ function formatKMInfo(kmInfo) {
 
 /**
  * Obtém sugestão de referência para a localização atual
+ * Só retorna sugestão se estiver a menos de 500m da rodovia
  */
 function getLocationSuggestion(lat, lng) {
     const kmInfo = estimateKM(lat, lng);
 
     if (!kmInfo) {
+        return null;
+    }
+
+    // Só sugere se estiver a menos de 500m (0.5km) da rodovia
+    // Distância maior significa que o usuário não está na rodovia
+    if (kmInfo.distancia > 0.5) {
         return null;
     }
 
