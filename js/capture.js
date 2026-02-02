@@ -279,6 +279,7 @@ function formatAccuracyIndicator(accuracy) {
 // ========== KM Aproximado da Rodovia ==========
 
 // Mostra o KM aproximado para a localização atual
+// Só exibe se estiver realmente próximo da rodovia (até 500m)
 function showKmApproximado(lat, lng, type) {
   const displayId = `${type}KmDisplay`;
   const infoId = `${type}KmInfo`;
@@ -293,8 +294,9 @@ function showKmApproximado(lat, lng, type) {
 
   const suggestion = window.HighwayPoints.getSuggestion(lat, lng);
 
-  if (!suggestion || suggestion.distancia > 3) {
-    // Muito longe de qualquer rodovia
+  // Só mostra se estiver a menos de 500m da rodovia
+  // Distância maior que isso significa que o usuário não está na rodovia
+  if (!suggestion || suggestion.distancia > 0.5) {
     display.style.display = 'none';
     return;
   }
