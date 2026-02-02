@@ -12,7 +12,10 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
   <title>GeoFotos</title>
 </head>
 <body>
@@ -83,6 +86,17 @@
     <span id="previewCoords">Obtendo localização...</span>
   </div>
 
+  <!-- KM Aproximado da Rodovia -->
+  <div class="km-display" id="photoKmDisplay" style="display: none;">
+    <div class="km-header">
+      <span class="km-icon">🛣️</span>
+      <span class="km-title">Referência Rodoviária</span>
+    </div>
+    <div class="km-info" id="photoKmInfo"></div>
+    <div class="km-nearby" id="photoKmNearby"></div>
+    <button type="button" class="btn btn-secondary btn-small km-use-btn" id="useKmRefPhoto">Usar como referência</button>
+  </div>
+
   <div class="textarea-wrapper">
     <textarea id="notesInput" placeholder="Adicione observações sobre a foto/local..."></textarea>
     <button type="button" class="btn-mic" id="micBtnPhoto" title="Falar observação">
@@ -114,6 +128,17 @@
     <span id="previewVideoCoords">Obtendo localização...</span>
   </div>
 
+  <!-- KM Aproximado da Rodovia -->
+  <div class="km-display" id="videoKmDisplay" style="display: none;">
+    <div class="km-header">
+      <span class="km-icon">🛣️</span>
+      <span class="km-title">Referência Rodoviária</span>
+    </div>
+    <div class="km-info" id="videoKmInfo"></div>
+    <div class="km-nearby" id="videoKmNearby"></div>
+    <button type="button" class="btn btn-secondary btn-small km-use-btn" id="useKmRefVideo">Usar como referência</button>
+  </div>
+
   <div class="textarea-wrapper">
     <textarea id="videoNotesInput" placeholder="Adicione observações sobre o vídeo/local..."></textarea>
     <button type="button" class="btn-mic" id="micBtnVideo" title="Falar observação">
@@ -141,6 +166,17 @@
   <div class="coords-display">
     <div class="label">COORDENADAS</div>
     <span id="locationCoords">Obtendo localização...</span>
+  </div>
+
+  <!-- KM Aproximado da Rodovia -->
+  <div class="km-display" id="locationKmDisplay" style="display: none;">
+    <div class="km-header">
+      <span class="km-icon">🛣️</span>
+      <span class="km-title">Referência Rodoviária</span>
+    </div>
+    <div class="km-info" id="locationKmInfo"></div>
+    <div class="km-nearby" id="locationKmNearby"></div>
+    <button type="button" class="btn btn-secondary btn-small km-use-btn" id="useKmRefLocation">Usar como referência</button>
   </div>
 
   <div class="textarea-wrapper">
@@ -209,6 +245,52 @@
   <!-- View: Mapa -->
 
   <div id="map" class="view">
+    <!-- Controles do mapa -->
+    <div class="map-controls">
+      <button class="map-control-btn" id="toggleHighwayBtn" title="Mostrar pontos notáveis">
+        🛣️
+      </button>
+    </div>
+
+    <!-- Painel de filtros dos pontos notáveis -->
+    <div id="highwayFiltersPanel" class="highway-filters-panel" style="display: none;">
+      <div class="filters-header">
+        <span>Filtros</span>
+        <button class="close-filters-btn" id="closeFiltersBtn">×</button>
+      </div>
+      <div class="filters-content">
+        <div class="filter-group">
+          <label>Rodovia:</label>
+          <select id="filterBR">
+            <option value="all">Todas</option>
+            <option value="101">BR-101</option>
+            <option value="235">BR-235</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Tipo:</label>
+          <select id="filterTipo">
+            <option value="all">Todos</option>
+            <option value="prf">Posto PRF</option>
+            <option value="ponte">Ponte</option>
+            <option value="viaduto">Viaduto</option>
+            <option value="acesso">Acesso</option>
+            <option value="posto">Posto Combustível</option>
+            <option value="fiscal">Posto Fiscal</option>
+            <option value="retorno">Retorno</option>
+            <option value="industria">Indústria</option>
+            <option value="comercio">Comércio</option>
+            <option value="referencia">Referência</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Buscar:</label>
+          <input type="text" id="filterSearch" placeholder="Nome, município ou km...">
+        </div>
+        <div class="filter-stats" id="filterStats"></div>
+      </div>
+    </div>
+
     <div id="mapContainer" style="width: 100%; height: calc(100vh - 140px); border-radius: 12px; overflow: hidden;"></div>
   </div>
 
@@ -305,6 +387,7 @@
   <script src="js/utils.js"></script>
   <script src="js/db.js"></script>
   <script src="js/speech.js"></script>
+  <script src="js/highway-points.js"></script>
   <script src="js/capture.js"></script>
   <script src="js/history.js"></script>
   <script src="js/backup.js"></script>

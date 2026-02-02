@@ -276,6 +276,81 @@ function formatAccuracyIndicator(accuracy) {
   </div>`;
 }
 
+// ========== KM Aproximado da Rodovia ==========
+
+// Mostra o KM aproximado para a localização atual
+function showKmApproximado(lat, lng, type) {
+  const displayId = `${type}KmDisplay`;
+  const infoId = `${type}KmInfo`;
+  const nearbyId = `${type}KmNearby`;
+  const display = document.getElementById(displayId);
+  const info = document.getElementById(infoId);
+  const nearby = document.getElementById(nearbyId);
+
+  if (!display || !window.HighwayPoints) {
+    return;
+  }
+
+  const suggestion = window.HighwayPoints.getSuggestion(lat, lng);
+
+  if (!suggestion || suggestion.distancia > 3) {
+    // Muito longe de qualquer rodovia
+    display.style.display = 'none';
+    return;
+  }
+
+  display.style.display = 'block';
+
+  // Definir precisão visual
+  display.setAttribute('data-precisao', suggestion.precisao || 'alta');
+
+  // Info principal
+  const prefix = suggestion.estimado ? '~' : '';
+  info.textContent = `BR-${suggestion.br}, km ${prefix}${suggestion.km.toFixed(1)}`;
+
+  // Ponto próximo
+  if (suggestion.pontoProximo) {
+    nearby.textContent = `Próximo a: ${suggestion.pontoProximo.descricao}`;
+  } else {
+    nearby.textContent = '';
+  }
+
+  // Armazenar a sugestão para uso posterior
+  display.dataset.suggestion = JSON.stringify(suggestion);
+}
+
+// Usar referência do KM nas observações
+function useKmReference(type) {
+  const displayId = `${type}KmDisplay`;
+  const display = document.getElementById(displayId);
+  const notesInputId = type === 'photo' ? 'notesInput' :
+                       type === 'video' ? 'videoNotesInput' : 'locationNotesInput';
+  const notesInput = document.getElementById(notesInputId);
+
+  if (!display || !notesInput) return;
+
+  try {
+    const suggestion = JSON.parse(display.dataset.suggestion);
+    if (suggestion) {
+      const prefix = suggestion.estimado ? '~' : '';
+      const reference = `BR-${suggestion.br}, km ${prefix}${suggestion.km.toFixed(1)}`;
+      const nearby = suggestion.pontoProximo ? ` - ${suggestion.pontoProximo.descricao}` : '';
+
+      // Adicionar no início das observações
+      const currentNotes = notesInput.value.trim();
+      if (currentNotes) {
+        notesInput.value = `${reference}${nearby}\n${currentNotes}`;
+      } else {
+        notesInput.value = `${reference}${nearby}`;
+      }
+
+      showToast('Referência adicionada!');
+    }
+  } catch (e) {
+    console.error('Erro ao usar referência:', e);
+  }
+}
+
 // Inicializar captura
 function initCapture() {
   // ========== Foto + Localização ==========
@@ -316,10 +391,13 @@ function initCapture() {
           currentPhotoCoords = pos;
           currentPhotoAccuracy = pos.accuracy;
           previewCoords.innerHTML = formatCoords(pos.lat, pos.lng) + formatAccuracyIndicator(pos.accuracy);
+          // Mostrar KM aproximado
+          showKmApproximado(pos.lat, pos.lng, 'photo');
         } catch (err) {
           previewCoords.innerHTML = err.message;
           currentPhotoCoords = null;
           currentPhotoAccuracy = null;
+          document.getElementById('photoKmDisplay').style.display = 'none';
         }
       }
     };
@@ -386,6 +464,11 @@ function initCapture() {
     }
   });
 
+  // Botão para usar referência de KM
+  document.getElementById('useKmRefPhoto').addEventListener('click', () => {
+    useKmReference('photo');
+  });
+
   // ========== Vídeo + Localização ==========
   const videoInput = document.getElementById('videoInput');
   const takeVideoBtn = document.getElementById('takeVideoBtn');
@@ -417,10 +500,13 @@ function initCapture() {
         currentVideoCoords = pos;
         currentVideoAccuracy = pos.accuracy;
         previewVideoCoords.innerHTML = formatCoords(pos.lat, pos.lng) + formatAccuracyIndicator(pos.accuracy);
+        // Mostrar KM aproximado
+        showKmApproximado(pos.lat, pos.lng, 'video');
       } catch (err) {
         previewVideoCoords.innerHTML = err.message;
         currentVideoCoords = null;
         currentVideoAccuracy = null;
+        document.getElementById('videoKmDisplay').style.display = 'none';
       }
     };
     reader.readAsDataURL(file);
@@ -481,6 +567,11 @@ function initCapture() {
     }
   });
 
+  // Botão para usar referência de KM
+  document.getElementById('useKmRefVideo').addEventListener('click', () => {
+    useKmReference('video');
+  });
+
   // ========== Apenas Localização ==========
   const locationPreview = document.getElementById('locationPreview');
   const locationCoords = document.getElementById('locationCoords');
@@ -499,10 +590,13 @@ function initCapture() {
       currentLocationCoords = pos;
       currentLocationAccuracy = pos.accuracy;
       locationCoords.innerHTML = formatCoords(pos.lat, pos.lng) + formatAccuracyIndicator(pos.accuracy);
+      // Mostrar KM aproximado
+      showKmApproximado(pos.lat, pos.lng, 'location');
     } catch (err) {
       locationCoords.innerHTML = err.message;
       currentLocationCoords = null;
       currentLocationAccuracy = null;
+      document.getElementById('locationKmDisplay').style.display = 'none';
     }
   });
 
@@ -553,5 +647,10 @@ function initCapture() {
         addTag('location', tag);
       }
     }
+  });
+
+  // Botão para usar referência de KM
+  document.getElementById('useKmRefLocation').addEventListener('click', () => {
+    useKmReference('location');
   });
 }
