@@ -6,11 +6,101 @@ let markers = [];
 function initMap() {
   if (mapInstance) return;
 
-  mapInstance = L.map('mapContainer').setView([-15.7801, -47.9292], 4); // Brasil como padrão
+  // Centraliza em Sergipe por padrão
+  mapInstance = L.map('mapContainer').setView([-10.9472, -37.0731], 8);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
   }).addTo(mapInstance);
+
+  // Inicializa os controles de pontos notáveis
+  initHighwayControls();
+
+  // Atualiza camada de pontos quando o zoom muda
+  mapInstance.on('zoomend', () => {
+    if (window.HighwayPoints && window.HighwayPoints.isVisible()) {
+      window.HighwayPoints.update(mapInstance);
+    }
+  });
+}
+
+// Inicializa controles de pontos notáveis
+function initHighwayControls() {
+  const toggleBtn = document.getElementById('toggleHighwayBtn');
+  const filtersPanel = document.getElementById('highwayFiltersPanel');
+  const closeFiltersBtn = document.getElementById('closeFiltersBtn');
+  const filterBR = document.getElementById('filterBR');
+  const filterTipo = document.getElementById('filterTipo');
+  const filterSearch = document.getElementById('filterSearch');
+  const filterStats = document.getElementById('filterStats');
+
+  // Toggle da camada
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      if (window.HighwayPoints) {
+        const isVisible = window.HighwayPoints.toggle(mapInstance);
+        toggleBtn.classList.toggle('active', isVisible);
+        filtersPanel.style.display = isVisible ? 'block' : 'none';
+        updateFilterStats();
+      }
+    });
+  }
+
+  // Fechar painel de filtros
+  if (closeFiltersBtn) {
+    closeFiltersBtn.addEventListener('click', () => {
+      filtersPanel.style.display = 'none';
+    });
+  }
+
+  // Filtros
+  if (filterBR) {
+    filterBR.addEventListener('change', () => {
+      applyHighwayFilters();
+    });
+  }
+
+  if (filterTipo) {
+    filterTipo.addEventListener('change', () => {
+      applyHighwayFilters();
+    });
+  }
+
+  if (filterSearch) {
+    let searchTimeout;
+    filterSearch.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        applyHighwayFilters();
+      }, 300);
+    });
+  }
+}
+
+// Aplica filtros
+function applyHighwayFilters() {
+  const filterBR = document.getElementById('filterBR');
+  const filterTipo = document.getElementById('filterTipo');
+  const filterSearch = document.getElementById('filterSearch');
+
+  if (window.HighwayPoints) {
+    window.HighwayPoints.setFilters({
+      br: filterBR ? filterBR.value : 'all',
+      tipo: filterTipo ? filterTipo.value : 'all',
+      search: filterSearch ? filterSearch.value : ''
+    }, mapInstance);
+
+    updateFilterStats();
+  }
+}
+
+// Atualiza estatísticas do filtro
+function updateFilterStats() {
+  const filterStats = document.getElementById('filterStats');
+  if (filterStats && window.HighwayPoints) {
+    const stats = window.HighwayPoints.getStats();
+    filterStats.textContent = `${stats.total} pontos disponíveis`;
+  }
 }
 
 async function loadMapMarkers() {
