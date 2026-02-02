@@ -15,6 +15,138 @@ let currentPhotoTags = [];
 let currentVideoTags = [];
 let currentLocationTags = [];
 
+// Monitor de GPS em tempo real
+let gpsWatchId = null;
+let gpsMonitorPaused = false;
+let lastGpsUpdate = null;
+
+function startGpsMonitor() {
+  if (!navigator.geolocation) {
+    updateGpsMonitorUI({ error: 'GPS não suportado' });
+    return;
+  }
+
+  // Mostra estado de busca inicial
+  updateGpsMonitorUI({ searching: true });
+
+  const options = {
+    enableHighAccuracy: true,
+    timeout: 30000,
+    maximumAge: 0
+  };
+
+  gpsWatchId = navigator.geolocation.watchPosition(
+    (position) => {
+      if (gpsMonitorPaused) return;
+
+      lastGpsUpdate = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        timestamp: new Date()
+      };
+
+      updateGpsMonitorUI(lastGpsUpdate);
+    },
+    (error) => {
+      if (gpsMonitorPaused) return;
+
+      let errorMsg = 'Erro ao obter localização';
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          errorMsg = 'Permissão negada. Ative o GPS.';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMsg = 'Localização indisponível';
+          break;
+        case error.TIMEOUT:
+          errorMsg = 'Buscando sinal...';
+          updateGpsMonitorUI({ searching: true, message: errorMsg });
+          return;
+      }
+      updateGpsMonitorUI({ error: errorMsg });
+    },
+    options
+  );
+}
+
+function stopGpsMonitor() {
+  if (gpsWatchId !== null) {
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null;
+  }
+}
+
+function toggleGpsMonitor() {
+  gpsMonitorPaused = !gpsMonitorPaused;
+  const btn = document.getElementById('toggleGpsBtn');
+  const icon = document.getElementById('gpsIcon');
+
+  if (gpsMonitorPaused) {
+    btn.textContent = '▶️';
+    btn.title = 'Retomar monitoramento';
+    icon.classList.add('paused');
+    icon.classList.remove('active');
+    document.getElementById('gpsStatus').textContent = 'Pausado';
+    document.getElementById('gpsStatus').className = 'gps-status waiting';
+    document.getElementById('gpsBar').className = 'gps-bar';
+  } else {
+    btn.textContent = '⏸️';
+    btn.title = 'Pausar monitoramento';
+    icon.classList.remove('paused');
+    if (lastGpsUpdate) {
+      updateGpsMonitorUI(lastGpsUpdate);
+    } else {
+      updateGpsMonitorUI({ searching: true });
+    }
+  }
+}
+
+function updateGpsMonitorUI(data) {
+  const statusEl = document.getElementById('gpsStatus');
+  const accuracyEl = document.getElementById('gpsAccuracy');
+  const coordsEl = document.getElementById('gpsCoordsLive');
+  const barEl = document.getElementById('gpsBar');
+  const iconEl = document.getElementById('gpsIcon');
+
+  if (data.error) {
+    statusEl.textContent = data.error;
+    statusEl.className = 'gps-status error';
+    accuracyEl.textContent = '';
+    coordsEl.textContent = '';
+    barEl.className = 'gps-bar low';
+    iconEl.classList.remove('active');
+    return;
+  }
+
+  if (data.searching) {
+    statusEl.textContent = data.message || 'Buscando satélites...';
+    statusEl.className = 'gps-status waiting';
+    accuracyEl.textContent = '';
+    coordsEl.textContent = '';
+    barEl.className = 'gps-bar searching';
+    iconEl.classList.add('active');
+    return;
+  }
+
+  const label = getAccuracyLabel(data.accuracy);
+  const levelClass = data.accuracy <= 5 ? 'excellent' :
+                     data.accuracy <= 15 ? 'good' :
+                     data.accuracy <= 50 ? 'moderate' : 'low';
+
+  statusEl.textContent = `${label.icon} ${label.text}`;
+  statusEl.className = `gps-status ${levelClass}`;
+  accuracyEl.textContent = `±${Math.round(data.accuracy)}m`;
+  coordsEl.textContent = `${data.lat.toFixed(6)}, ${data.lng.toFixed(6)}`;
+  barEl.className = `gps-bar ${levelClass}`;
+  iconEl.classList.add('active');
+}
+
+function initGpsMonitor() {
+  document.getElementById('toggleGpsBtn').addEventListener('click', toggleGpsMonitor);
+  startGpsMonitor();
+}
+
 // Renderizar galeria de fotos no preview
 function renderPhotoGallery() {
   const gallery = document.getElementById('photoGallery');
