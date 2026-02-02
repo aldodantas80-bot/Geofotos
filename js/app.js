@@ -70,6 +70,7 @@ async function init() {
 
   initTabs();
   initCapture();
+  initGpsMonitor();
   initHistory();
   initSpeechRecognition();
   initBackup();

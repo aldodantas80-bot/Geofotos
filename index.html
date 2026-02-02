@@ -30,6 +30,23 @@
   <!-- View: Capturar -->
 
   <div id="capture" class="view active">
+    <!-- Monitor de GPS em tempo real -->
+    <div class="card gps-monitor" id="gpsMonitor">
+      <div class="gps-monitor-header">
+        <span class="gps-icon" id="gpsIcon">📡</span>
+        <span class="gps-title">Sinal GPS</span>
+        <button class="btn btn-secondary btn-small" id="toggleGpsBtn" title="Pausar/Retomar monitoramento">⏸️</button>
+      </div>
+      <div class="gps-monitor-content">
+        <div class="gps-status" id="gpsStatus">Iniciando...</div>
+        <div class="gps-accuracy" id="gpsAccuracy"></div>
+        <div class="gps-coords-live" id="gpsCoordsLive"></div>
+      </div>
+      <div class="gps-bar-container">
+        <div class="gps-bar" id="gpsBar"></div>
+      </div>
+    </div>
+
     <div class="card">
       <h3 style="margin-bottom: 16px;">📸 Foto + Localização</h3>
       <input type="file" id="cameraInput" accept="image/*" capture="environment">
