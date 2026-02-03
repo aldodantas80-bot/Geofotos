@@ -121,6 +121,16 @@ async function getAllTags() {
   });
 }
 
+async function getAllTagsWithIds() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(TAGS_STORE, 'readonly');
+    const store = tx.objectStore(TAGS_STORE);
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
 async function deleteTag(id) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(TAGS_STORE, 'readwrite');
@@ -128,6 +138,58 @@ async function deleteTag(id) {
     const request = store.delete(id);
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
+  });
+}
+
+async function renameTag(id, newName) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(TAGS_STORE, 'readwrite');
+    const store = tx.objectStore(TAGS_STORE);
+    const getRequest = store.get(id);
+    getRequest.onsuccess = () => {
+      const tag = getRequest.result;
+      if (tag) {
+        tag.name = newName;
+        const putRequest = store.put(tag);
+        putRequest.onsuccess = () => resolve();
+        putRequest.onerror = () => reject(putRequest.error);
+      } else {
+        reject(new Error('Tag não encontrada'));
+      }
+    };
+    getRequest.onerror = () => reject(getRequest.error);
+  });
+}
+
+async function renameTagInRecords(oldName, newName) {
+  const records = await getAllRecords();
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  const store = tx.objectStore(STORE_NAME);
+  for (const record of records) {
+    if (record.tags && record.tags.includes(oldName)) {
+      record.tags = record.tags.map(t => t === oldName ? newName : t);
+      store.put(record);
+    }
+  }
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function removeTagFromRecords(tagName) {
+  const records = await getAllRecords();
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  const store = tx.objectStore(STORE_NAME);
+  for (const record of records) {
+    if (record.tags && record.tags.includes(tagName)) {
+      record.tags = record.tags.filter(t => t !== tagName);
+      store.put(record);
+    }
+  }
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
   });
 }
 

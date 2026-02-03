@@ -653,6 +653,27 @@
       </div>
     </div>
 
+    <div class="settings-section">
+      <div class="settings-card" style="flex-direction: column;">
+        <div style="display: flex; gap: var(--space-4); align-items: flex-start;">
+          <div class="settings-icon tags">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+              <line x1="7" y1="7" x2="7.01" y2="7"/>
+            </svg>
+          </div>
+          <div class="settings-content" style="margin-bottom: 0;">
+            <h3>Gerenciar Tags</h3>
+            <p style="margin-bottom: 0;">Edite ou exclua tags salvas. A alteração reflete em todos os registros.</p>
+          </div>
+        </div>
+        <div id="tagsManagerList" class="tags-manager-list"></div>
+        <div id="tagsManagerEmpty" class="tags-manager-empty">
+          <p>Nenhuma tag salva ainda.</p>
+        </div>
+      </div>
+    </div>
+
     <div class="settings-section danger">
       <div class="settings-card">
         <div class="settings-icon danger">
