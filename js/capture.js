@@ -80,20 +80,27 @@ function stopGpsMonitor() {
 function toggleGpsMonitor() {
   gpsMonitorPaused = !gpsMonitorPaused;
   const btn = document.getElementById('toggleGpsBtn');
-  const icon = document.getElementById('gpsIcon');
+  const iconWrapper = document.getElementById('gpsIconWrapper');
+  const headerIndicator = document.getElementById('headerGpsIndicator');
 
   if (gpsMonitorPaused) {
-    btn.textContent = '▶️';
+    // Mostrar ícone de play
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polygon points="5 3 19 12 5 21 5 3"/>
+    </svg>`;
     btn.title = 'Retomar monitoramento';
-    icon.classList.add('paused');
-    icon.classList.remove('active');
+    if (iconWrapper) iconWrapper.className = 'gps-icon-wrapper';
+    if (headerIndicator) headerIndicator.classList.remove('active');
     document.getElementById('gpsStatus').textContent = 'Pausado';
     document.getElementById('gpsStatus').className = 'gps-status waiting';
     document.getElementById('gpsBar').className = 'gps-bar';
   } else {
-    btn.textContent = '⏸️';
+    // Mostrar ícone de pause
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="6" y="4" width="4" height="16"/>
+      <rect x="14" y="4" width="4" height="16"/>
+    </svg>`;
     btn.title = 'Pausar monitoramento';
-    icon.classList.remove('paused');
     if (lastGpsUpdate) {
       updateGpsMonitorUI(lastGpsUpdate);
     } else {
@@ -107,7 +114,8 @@ function updateGpsMonitorUI(data) {
   const accuracyEl = document.getElementById('gpsAccuracy');
   const coordsEl = document.getElementById('gpsCoordsLive');
   const barEl = document.getElementById('gpsBar');
-  const iconEl = document.getElementById('gpsIcon');
+  const iconWrapper = document.getElementById('gpsIconWrapper');
+  const headerIndicator = document.getElementById('headerGpsIndicator');
 
   if (data.error) {
     statusEl.textContent = data.error;
@@ -115,7 +123,8 @@ function updateGpsMonitorUI(data) {
     accuracyEl.textContent = '';
     coordsEl.textContent = '';
     barEl.className = 'gps-bar low';
-    iconEl.classList.remove('active');
+    if (iconWrapper) iconWrapper.className = 'gps-icon-wrapper low';
+    if (headerIndicator) headerIndicator.classList.remove('active');
     return;
   }
 
@@ -125,7 +134,8 @@ function updateGpsMonitorUI(data) {
     accuracyEl.textContent = '';
     coordsEl.textContent = '';
     barEl.className = 'gps-bar searching';
-    iconEl.classList.add('active');
+    if (iconWrapper) iconWrapper.className = 'gps-icon-wrapper searching';
+    if (headerIndicator) headerIndicator.classList.remove('active');
     return;
   }
 
@@ -134,12 +144,13 @@ function updateGpsMonitorUI(data) {
                      data.accuracy <= 15 ? 'good' :
                      data.accuracy <= 50 ? 'moderate' : 'low';
 
-  statusEl.textContent = `${label.icon} ${label.text}`;
+  statusEl.textContent = `${label.text}`;
   statusEl.className = `gps-status ${levelClass}`;
   accuracyEl.textContent = `±${Math.round(data.accuracy)}m`;
   coordsEl.textContent = `${data.lat.toFixed(6)}, ${data.lng.toFixed(6)}`;
   barEl.className = `gps-bar ${levelClass}`;
-  iconEl.classList.add('active');
+  if (iconWrapper) iconWrapper.className = `gps-icon-wrapper ${levelClass}`;
+  if (headerIndicator) headerIndicator.classList.add('active');
 }
 
 function initGpsMonitor() {
