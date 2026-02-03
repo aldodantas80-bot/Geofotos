@@ -1,7 +1,7 @@
 {
-  "name": "GeoFotos PRF",
+  "name": "GeoFotos",
   "short_name": "GeoFotos",
-  "description": "Capture fotos e localizações com precisão GPS profissional - PRF Sergipe",
+  "description": "Capture fotos e localizações com precisão GPS profissional",
   "start_url": "/Geofotos/",
   "scope": "/Geofotos/",
   "display": "standalone",
