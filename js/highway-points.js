@@ -14,19 +14,52 @@ let currentFilters = {
     search: ''
 };
 
-// Configuração de ícones por tipo
+// Configuração de ícones por tipo (SVG profissionais)
 const POINT_ICONS = {
-    prf: { emoji: '🚔', color: '#FFD700', priority: 1 },
-    ponte: { emoji: '🌉', color: '#4A90D9', priority: 2 },
-    viaduto: { emoji: '🛤️', color: '#6B8E23', priority: 2 },
-    acesso: { emoji: '↗️', color: '#32CD32', priority: 3 },
-    posto: { emoji: '⛽', color: '#FF6347', priority: 3 },
-    fiscal: { emoji: '🏛️', color: '#9370DB', priority: 2 },
-    retorno: { emoji: '↩️', color: '#FFA500', priority: 4 },
-    industria: { emoji: '🏭', color: '#808080', priority: 4 },
-    comercio: { emoji: '🏪', color: '#20B2AA', priority: 4 },
-    passarela: { emoji: '🚶', color: '#DDA0DD', priority: 3 },
-    referencia: { emoji: '📍', color: '#CD853F', priority: 4 }
+    prf: {
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><path d="M9 11l2 2 4-4"/></svg>',
+        color: '#FFD700', priority: 1
+    },
+    ponte: {
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16"/><path d="M4 14c0-3.3 2.7-6 6-6h4c3.3 0 6 2.7 6 6"/><line x1="6" y1="14" x2="6" y2="20"/><line x1="12" y1="8" x2="12" y2="20"/><line x1="18" y1="14" x2="18" y2="20"/></svg>',
+        color: '#4A90D9', priority: 2
+    },
+    viaduto: {
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 16h20"/><path d="M4 16c0-4 3-8 8-8s8 4 8 8"/><line x1="7" y1="16" x2="7" y2="20"/><line x1="12" y1="8" x2="12" y2="20"/><line x1="17" y1="16" x2="17" y2="20"/></svg>',
+        color: '#6B8E23', priority: 2
+    },
+    acesso: {
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8l4 4-4 4"/></svg>',
+        color: '#32CD32', priority: 3
+    },
+    posto: {
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="12" height="16" rx="1"/><path d="M15 12h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V9l-3-3"/><line x1="6" y1="8" x2="12" y2="8"/></svg>',
+        color: '#FF6347', priority: 3
+    },
+    fiscal: {
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="12" rx="1"/><path d="M7 8V6a5 5 0 0 1 10 0v2"/><line x1="12" y1="12" x2="12" y2="16"/></svg>',
+        color: '#9370DB', priority: 2
+    },
+    retorno: {
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 0 1 0 8h-1"/></svg>',
+        color: '#FFA500', priority: 4
+    },
+    industria: {
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="M5 20V8l5 4V8l5 4V4h4v16"/><line x1="19" y1="8" x2="19" y2="8.01"/><line x1="19" y1="12" x2="19" y2="12.01"/></svg>',
+        color: '#808080', priority: 4
+    },
+    comercio: {
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l1-4h16l1 4"/><path d="M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9"/><path d="M9 21V13h6v8"/><path d="M3 9c0 1.1.9 2 2 2s2-.9 2-2"/><path d="M7 9c0 1.1.9 2 2 2s2-.9 2-2"/><path d="M11 9c0 1.1.9 2 2 2s2-.9 2-2"/><path d="M15 9c0 1.1.9 2 2 2s2-.9 2-2"/></svg>',
+        color: '#20B2AA', priority: 4
+    },
+    passarela: {
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="2"/><path d="M12 7v5"/><path d="M9 20l3-8 3 8"/><path d="M8 12h8"/></svg>',
+        color: '#DDA0DD', priority: 3
+    },
+    referencia: {
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+        color: '#CD853F', priority: 4
+    }
 };
 
 // Tipos para exibição no filtro
@@ -69,7 +102,7 @@ function createPointIcon(point) {
 
     return L.divIcon({
         className: 'highway-point-marker',
-        html: `<div class="point-icon" style="background-color: ${config.color};" data-tipo="${point.tipo}">${config.emoji}</div>`,
+        html: `<div class="point-icon" style="background-color: ${config.color};" data-tipo="${point.tipo}">${config.svg}</div>`,
         iconSize: [28, 28],
         iconAnchor: [14, 14],
         popupAnchor: [0, -14]
@@ -93,7 +126,7 @@ function createPopupContent(point) {
                 <span class="popup-tipo">${tipoLabel}</span>
                 <span class="popup-sentido">${point.sentido}</span>
             </div>
-            <div class="popup-municipio">📍 ${point.municipio} - ${point.uf}</div>
+            <div class="popup-municipio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${point.municipio} - ${point.uf}</div>
             <div class="popup-coords">${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}</div>
             <button class="popup-maps-btn" onclick="openInMaps(${point.lat}, ${point.lng})">
                 Abrir no Maps
