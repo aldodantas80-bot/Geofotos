@@ -121,14 +121,14 @@ async function renderHistory() {
         <img src="${mainPhoto}" alt="Foto">
         ${photoCount > 1 ? `<span style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">+${photoCount - 1}</span>` : ''}
       </div>`;
-      typeLabel = '📸 Foto';
-      saveBtn = `<button class="btn btn-secondary btn-small" onclick="saveMediaToGallery(${r.id})">💾 Foto</button>`;
+      typeLabel = 'Foto';
+      saveBtn = `<button class="btn btn-ghost btn-small" onclick="saveMediaToGallery(${r.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Salvar</button>`;
     } else if (r.type === 'video') {
       mediaHtml = `<video src="${r.video}" controls></video>`;
-      typeLabel = '🎬 Vídeo';
-      saveBtn = `<button class="btn btn-secondary btn-small" onclick="saveMediaToGallery(${r.id})">💾 Vídeo</button>`;
+      typeLabel = 'Vídeo';
+      saveBtn = `<button class="btn btn-ghost btn-small" onclick="saveMediaToGallery(${r.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Salvar</button>`;
     } else {
-      typeLabel = '📍 Localização';
+      typeLabel = 'Localização';
     }
 
     const isSelected = selectedIds.includes(r.id);
@@ -147,11 +147,11 @@ async function renderHistory() {
           </div>
           ${r.notes ? `<div class="record-notes">${r.notes}</div>` : ''}
           ${renderRecordTags(r.tags)}
-          <div class="btn-group">
-            <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); copyRecordData(${r.id})">📋 Copiar</button>
-            <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); openInMaps(${r.lat}, ${r.lng})">🗺️ Mapa</button>
+          <div class="btn-group" style="margin-top:12px;gap:8px;">
+            <button class="btn btn-ghost btn-small" onclick="event.stopPropagation(); copyRecordData(${r.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar</button>
+            <button class="btn btn-ghost btn-small" onclick="event.stopPropagation(); openInMaps(${r.lat}, ${r.lng})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Mapa</button>
             ${saveBtn ? saveBtn.replace('onclick="', 'onclick="event.stopPropagation(); ') : ''}
-            <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); shareRecord(${r.id})">📤 Enviar</button>
+            <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); shareRecord(${r.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Enviar</button>
           </div>
         </div>
       </div>
@@ -269,7 +269,18 @@ async function shareRecord(id) {
 function toggleSelectionMode() {
   selectionMode = !selectionMode;
   selectedIds = [];
-  document.getElementById('selectModeBtn').textContent = selectionMode ? '✖️ Cancelar' : '☑️ Selecionar';
+  const btn = document.getElementById('selectModeBtn');
+  if (selectionMode) {
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg> Cancelar`;
+  } else {
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+      <polyline points="9 11 12 14 22 4"/>
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+    </svg> Selecionar`;
+  }
   renderHistory();
 }
 
@@ -338,7 +349,10 @@ async function shareSelectedRecords() {
 
   selectionMode = false;
   selectedIds = [];
-  document.getElementById('selectModeBtn').textContent = '☑️ Selecionar';
+  document.getElementById('selectModeBtn').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+    <polyline points="9 11 12 14 22 4"/>
+    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+  </svg> Selecionar`;
   renderHistory();
 }
 
@@ -446,7 +460,10 @@ function initHistory() {
   document.getElementById('cancelSelectionBtn').addEventListener('click', () => {
     selectionMode = false;
     selectedIds = [];
-    document.getElementById('selectModeBtn').textContent = '☑️ Selecionar';
+    document.getElementById('selectModeBtn').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+      <polyline points="9 11 12 14 22 4"/>
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+    </svg> Selecionar`;
     renderHistory();
   });
   document.getElementById('shareSelectedBtn').addEventListener('click', shareSelectedRecords);
@@ -556,6 +573,16 @@ function initHistory() {
   });
 
   document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
+
+  // Botão cancelar no footer do modal de edição
+  const cancelEditModalBtn = document.getElementById('cancelEditModalBtn');
+  if (cancelEditModalBtn) {
+    cancelEditModalBtn.addEventListener('click', () => {
+      document.getElementById('editModal').classList.remove('show');
+      editingRecordId = null;
+      editingTags = [];
+    });
+  }
 
   document.getElementById('addEditTagBtn').addEventListener('click', () => {
     const input = document.getElementById('editTagInput');

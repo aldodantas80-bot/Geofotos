@@ -1,47 +1,116 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#0a0f1a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="GeoFotos">
+  <meta name="description" content="Capture fotos e localizações com precisão GPS profissional">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <!-- Fontes Modernas -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-  <title>GeoFotos</title>
+  <title>GeoFotos PRF</title>
 </head>
 <body>
+  <!-- Header Profissional -->
   <header>
-    <h1>📍 GeoFotos</h1>
+    <div class="header-content">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="10" r="3"/>
+            <path d="M12 2a8 8 0 0 0-8 8c0 5.4 7.05 11.5 7.35 11.76a1 1 0 0 0 1.3 0C13 21.5 20 15.4 20 10a8 8 0 0 0-8-8z"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">GeoFotos</span>
+          <span class="logo-subtitle">PRF Sergipe</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="gps-indicator" id="headerGpsIndicator" title="Status GPS">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
+            <circle cx="12" cy="12" r="4"/>
+          </svg>
+        </div>
+      </div>
+    </div>
   </header>
 
-  <div class="tabs">
-    <button class="tab active" data-view="capture">Capturar</button>
-    <button class="tab" data-view="history">Histórico</button>
-    <button class="tab" data-view="map">Mapa</button>
-    <button class="tab" data-view="settings">Configurações</button>
-  </div>
+  <!-- Tab Navigation Moderna -->
+  <nav class="tabs">
+    <button class="tab active" data-view="capture">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      <span>Capturar</span>
+    </button>
+    <button class="tab" data-view="history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <span>Histórico</span>
+    </button>
+    <button class="tab" data-view="map">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+        <line x1="8" y1="2" x2="8" y2="18"/>
+        <line x1="16" y1="6" x2="16" y2="22"/>
+      </svg>
+      <span>Mapa</span>
+    </button>
+    <button class="tab" data-view="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span>Ajustes</span>
+    </button>
+  </nav>
 
   <!-- View: Capturar -->
-
   <div id="capture" class="view active">
     <!-- Monitor de GPS em tempo real -->
     <div class="card gps-monitor" id="gpsMonitor">
       <div class="gps-monitor-header">
-        <span class="gps-icon" id="gpsIcon">📡</span>
-        <span class="gps-title">Sinal GPS</span>
-        <button class="btn btn-secondary btn-small" id="toggleGpsBtn" title="Pausar/Retomar monitoramento">⏸️</button>
+        <div class="gps-icon-wrapper" id="gpsIconWrapper">
+          <svg id="gpsIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="4"/>
+            <line x1="12" y1="2" x2="12" y2="6"/>
+            <line x1="12" y1="18" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="6" y2="12"/>
+            <line x1="18" y1="12" x2="22" y2="12"/>
+          </svg>
+        </div>
+        <div class="gps-info">
+          <span class="gps-title">Sinal GPS</span>
+          <span class="gps-status" id="gpsStatus">Iniciando...</span>
+        </div>
+        <button class="btn-icon" id="toggleGpsBtn" title="Pausar/Retomar monitoramento">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="6" y="4" width="4" height="16"/>
+            <rect x="14" y="4" width="4" height="16"/>
+          </svg>
+        </button>
       </div>
       <div class="gps-monitor-content">
-        <div class="gps-status" id="gpsStatus">Iniciando...</div>
         <div class="gps-accuracy" id="gpsAccuracy"></div>
         <div class="gps-coords-live" id="gpsCoordsLive"></div>
       </div>
@@ -50,217 +119,471 @@
       </div>
     </div>
 
-    <div class="card">
-      <h3 style="margin-bottom: 16px;">📸 Foto + Localização</h3>
+    <!-- Botões de Captura -->
+    <div class="capture-buttons">
       <input type="file" id="cameraInput" accept="image/*" capture="environment">
-      <button class="btn btn-primary" id="takePhotoBtn">
-        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2 7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
-        Tirar Foto
+      <button class="capture-btn photo" id="takePhotoBtn">
+        <div class="capture-btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </div>
+        <span class="capture-btn-label">Foto</span>
+        <span class="capture-btn-desc">+ Localização</span>
       </button>
-    </div>
 
-    <div class="card">
-      <h3 style="margin-bottom: 16px;">🎬 Vídeo + Localização</h3>
       <input type="file" id="videoInput" accept="video/*" capture="environment">
-      <button class="btn btn-primary" id="takeVideoBtn">
-        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
-        Gravar Vídeo
+      <button class="capture-btn video" id="takeVideoBtn">
+        <div class="capture-btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="23 7 16 12 23 17 23 7"/>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+          </svg>
+        </div>
+        <span class="capture-btn-label">Vídeo</span>
+        <span class="capture-btn-desc">+ Localização</span>
+      </button>
+
+      <button class="capture-btn location" id="getLocationBtn">
+        <div class="capture-btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <span class="capture-btn-label">Local</span>
+        <span class="capture-btn-desc">Apenas GPS</span>
       </button>
     </div>
 
-    <div class="card">
-      <h3 style="margin-bottom: 16px;">📍 Apenas Localização</h3>
-      <button class="btn btn-success" id="getLocationBtn">
-        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
-        Capturar Localização
-      </button>
+    <!-- Preview da foto capturada -->
+    <div id="photoPreview" class="card preview-card" style="display: none;">
+      <div class="preview-header">
+        <div class="preview-badge photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          <span>Nova Foto</span>
+        </div>
+        <button class="btn-icon-small" id="addMorePhotosBtn" title="Adicionar mais fotos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="photoGallery" class="photo-gallery"></div>
+
+      <div class="coords-display">
+        <div class="coords-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          <span>Coordenadas</span>
+        </div>
+        <span class="coords-value" id="previewCoords">Obtendo localização...</span>
+      </div>
+
+      <!-- KM Aproximado da Rodovia -->
+      <div class="km-display" id="photoKmDisplay" style="display: none;">
+        <div class="km-header">
+          <div class="km-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M2 12h20M12 2v20"/>
+              <circle cx="6" cy="12" r="2"/>
+              <circle cx="18" cy="12" r="2"/>
+            </svg>
+          </div>
+          <span class="km-title">Referência Rodoviária</span>
+        </div>
+        <div class="km-info" id="photoKmInfo"></div>
+        <div class="km-nearby" id="photoKmNearby"></div>
+        <button type="button" class="btn btn-outline btn-small km-use-btn" id="useKmRefPhoto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Usar como referência
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Observações
+        </label>
+        <div class="textarea-wrapper">
+          <textarea id="notesInput" placeholder="Descreva detalhes importantes sobre este local..."></textarea>
+          <button type="button" class="btn-mic" id="micBtnPhoto" title="Falar observação">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+          Tags
+        </label>
+        <div id="selectedTagsPhoto" class="selected-tags"></div>
+        <div class="tag-input-wrapper">
+          <input type="text" id="tagInputPhoto" placeholder="Adicionar tag...">
+          <button type="button" class="btn-tag-add" id="addTagBtnPhoto">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+        </div>
+        <div id="suggestedTagsPhoto" class="suggested-tags"></div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-ghost" id="cancelPhotoBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Cancelar
+        </button>
+        <button class="btn btn-primary" id="savePhotoBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Salvar
+        </button>
+      </div>
     </div>
 
-<!-- Preview da foto capturada -->
-<div id="photoPreview" class="card" style="display: none;">
-  <div id="photoGallery" class="photo-gallery"></div>
-  <button type="button" class="btn btn-secondary" id="addMorePhotosBtn" style="margin-bottom: 12px;">+ Adicionar mais fotos</button>
+    <!-- Preview do vídeo capturado -->
+    <div id="videoPreview" class="card preview-card" style="display: none;">
+      <div class="preview-header">
+        <div class="preview-badge video">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="23 7 16 12 23 17 23 7"/>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+          </svg>
+          <span>Novo Vídeo</span>
+        </div>
+      </div>
 
-  <div class="coords-display">
-    <div class="label">COORDENADAS</div>
-    <span id="previewCoords">Obtendo localização...</span>
-  </div>
+      <video id="previewVideo" class="preview-video" controls></video>
 
-  <!-- KM Aproximado da Rodovia -->
-  <div class="km-display" id="photoKmDisplay" style="display: none;">
-    <div class="km-header">
-      <span class="km-icon">🛣️</span>
-      <span class="km-title">Referência Rodoviária</span>
-    </div>
-    <div class="km-info" id="photoKmInfo"></div>
-    <div class="km-nearby" id="photoKmNearby"></div>
-    <button type="button" class="btn btn-secondary btn-small km-use-btn" id="useKmRefPhoto">Usar como referência</button>
-  </div>
+      <div class="coords-display">
+        <div class="coords-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          <span>Coordenadas</span>
+        </div>
+        <span class="coords-value" id="previewVideoCoords">Obtendo localização...</span>
+      </div>
 
-  <div class="textarea-wrapper">
-    <textarea id="notesInput" placeholder="Adicione observações sobre a foto/local..."></textarea>
-    <button type="button" class="btn-mic" id="micBtnPhoto" title="Falar observação">
-      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-    </button>
-  </div>
+      <!-- KM Aproximado da Rodovia -->
+      <div class="km-display" id="videoKmDisplay" style="display: none;">
+        <div class="km-header">
+          <div class="km-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M2 12h20M12 2v20"/>
+              <circle cx="6" cy="12" r="2"/>
+              <circle cx="18" cy="12" r="2"/>
+            </svg>
+          </div>
+          <span class="km-title">Referência Rodoviária</span>
+        </div>
+        <div class="km-info" id="videoKmInfo"></div>
+        <div class="km-nearby" id="videoKmNearby"></div>
+        <button type="button" class="btn btn-outline btn-small km-use-btn" id="useKmRefVideo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Usar como referência
+        </button>
+      </div>
 
-  <div class="tags-input" style="margin-top: 8px;">
-    <div id="selectedTagsPhoto" class="selected-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;"></div>
-    <div style="display: flex; gap: 8px;">
-      <input type="text" id="tagInputPhoto" placeholder="Nova tag..." style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.05); color: var(--text);">
-      <button type="button" class="btn btn-secondary btn-small" id="addTagBtnPhoto">+</button>
-    </div>
-    <div id="suggestedTagsPhoto" class="suggested-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px;"></div>
-  </div>
+      <div class="form-group">
+        <label class="form-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Observações
+        </label>
+        <div class="textarea-wrapper">
+          <textarea id="videoNotesInput" placeholder="Descreva detalhes importantes sobre este local..."></textarea>
+          <button type="button" class="btn-mic" id="micBtnVideo" title="Falar observação">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+        </div>
+      </div>
 
-  <div class="btn-group">
-    <button class="btn btn-secondary" id="cancelPhotoBtn">Cancelar</button>
-    <button class="btn btn-primary" id="savePhotoBtn">Salvar</button>
-  </div>
-</div>
+      <div class="form-group">
+        <label class="form-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+          Tags
+        </label>
+        <div id="selectedTagsVideo" class="selected-tags"></div>
+        <div class="tag-input-wrapper">
+          <input type="text" id="tagInputVideo" placeholder="Adicionar tag...">
+          <button type="button" class="btn-tag-add" id="addTagBtnVideo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+        </div>
+        <div id="suggestedTagsVideo" class="suggested-tags"></div>
+      </div>
 
-<!-- Preview do vídeo capturado -->
-<div id="videoPreview" class="card" style="display: none;">
-  <video id="previewVideo" class="preview-video" controls></video>
-
-  <div class="coords-display">
-    <div class="label">COORDENADAS</div>
-    <span id="previewVideoCoords">Obtendo localização...</span>
-  </div>
-
-  <!-- KM Aproximado da Rodovia -->
-  <div class="km-display" id="videoKmDisplay" style="display: none;">
-    <div class="km-header">
-      <span class="km-icon">🛣️</span>
-      <span class="km-title">Referência Rodoviária</span>
-    </div>
-    <div class="km-info" id="videoKmInfo"></div>
-    <div class="km-nearby" id="videoKmNearby"></div>
-    <button type="button" class="btn btn-secondary btn-small km-use-btn" id="useKmRefVideo">Usar como referência</button>
-  </div>
-
-  <div class="textarea-wrapper">
-    <textarea id="videoNotesInput" placeholder="Adicione observações sobre o vídeo/local..."></textarea>
-    <button type="button" class="btn-mic" id="micBtnVideo" title="Falar observação">
-      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-    </button>
-  </div>
-
-  <div class="tags-input" style="margin-top: 8px;">
-    <div id="selectedTagsVideo" class="selected-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;"></div>
-    <div style="display: flex; gap: 8px;">
-      <input type="text" id="tagInputVideo" placeholder="Nova tag..." style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.05); color: var(--text);">
-      <button type="button" class="btn btn-secondary btn-small" id="addTagBtnVideo">+</button>
-    </div>
-    <div id="suggestedTagsVideo" class="suggested-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px;"></div>
-  </div>
-
-  <div class="btn-group">
-    <button class="btn btn-secondary" id="cancelVideoBtn">Cancelar</button>
-    <button class="btn btn-primary" id="saveVideoBtn">Salvar</button>
-  </div>
-</div>
-
-<!-- Preview apenas localização -->
-<div id="locationPreview" class="card" style="display: none;">
-  <div class="coords-display">
-    <div class="label">COORDENADAS</div>
-    <span id="locationCoords">Obtendo localização...</span>
-  </div>
-
-  <!-- KM Aproximado da Rodovia -->
-  <div class="km-display" id="locationKmDisplay" style="display: none;">
-    <div class="km-header">
-      <span class="km-icon">🛣️</span>
-      <span class="km-title">Referência Rodoviária</span>
-    </div>
-    <div class="km-info" id="locationKmInfo"></div>
-    <div class="km-nearby" id="locationKmNearby"></div>
-    <button type="button" class="btn btn-secondary btn-small km-use-btn" id="useKmRefLocation">Usar como referência</button>
-  </div>
-
-  <div class="textarea-wrapper">
-    <textarea id="locationNotesInput" placeholder="Adicione observações sobre este local..."></textarea>
-    <button type="button" class="btn-mic" id="micBtnLocation" title="Falar observação">
-      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-    </button>
-  </div>
-
-  <div class="tags-input" style="margin-top: 8px;">
-    <div id="selectedTagsLocation" class="selected-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;"></div>
-    <div style="display: flex; gap: 8px;">
-      <input type="text" id="tagInputLocation" placeholder="Nova tag..." style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.05); color: var(--text);">
-      <button type="button" class="btn btn-secondary btn-small" id="addTagBtnLocation">+</button>
-    </div>
-    <div id="suggestedTagsLocation" class="suggested-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px;"></div>
-  </div>
-
-  <div class="btn-group">
-    <button class="btn btn-secondary" id="cancelLocationBtn">Cancelar</button>
-    <button class="btn btn-primary" id="saveLocationBtn">Salvar</button>
-  </div>
+      <div class="btn-group">
+        <button class="btn btn-ghost" id="cancelVideoBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Cancelar
+        </button>
+        <button class="btn btn-primary" id="saveVideoBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Salvar
+        </button>
+      </div>
     </div>
 
+    <!-- Preview apenas localização -->
+    <div id="locationPreview" class="card preview-card" style="display: none;">
+      <div class="preview-header">
+        <div class="preview-badge location">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <span>Nova Localização</span>
+        </div>
+      </div>
+
+      <div class="coords-display large">
+        <div class="coords-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          <span>Coordenadas</span>
+        </div>
+        <span class="coords-value" id="locationCoords">Obtendo localização...</span>
+      </div>
+
+      <!-- KM Aproximado da Rodovia -->
+      <div class="km-display" id="locationKmDisplay" style="display: none;">
+        <div class="km-header">
+          <div class="km-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M2 12h20M12 2v20"/>
+              <circle cx="6" cy="12" r="2"/>
+              <circle cx="18" cy="12" r="2"/>
+            </svg>
+          </div>
+          <span class="km-title">Referência Rodoviária</span>
+        </div>
+        <div class="km-info" id="locationKmInfo"></div>
+        <div class="km-nearby" id="locationKmNearby"></div>
+        <button type="button" class="btn btn-outline btn-small km-use-btn" id="useKmRefLocation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Usar como referência
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Observações
+        </label>
+        <div class="textarea-wrapper">
+          <textarea id="locationNotesInput" placeholder="Descreva detalhes importantes sobre este local..."></textarea>
+          <button type="button" class="btn-mic" id="micBtnLocation" title="Falar observação">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+          Tags
+        </label>
+        <div id="selectedTagsLocation" class="selected-tags"></div>
+        <div class="tag-input-wrapper">
+          <input type="text" id="tagInputLocation" placeholder="Adicionar tag...">
+          <button type="button" class="btn-tag-add" id="addTagBtnLocation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+        </div>
+        <div id="suggestedTagsLocation" class="suggested-tags"></div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-ghost" id="cancelLocationBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Cancelar
+        </button>
+        <button class="btn btn-primary" id="saveLocationBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Salvar
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- View: Histórico -->
-
   <div id="history" class="view">
-    <!-- Filtros de busca -->
-    <div class="card" style="padding: 12px;">
-      <input type="text" id="searchInput" placeholder="Buscar nas observações..." style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; background: rgba(255,255,255,0.05); color: var(--text);">
-      <div style="display: flex; gap: 8px;">
-        <select id="filterType" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.1); color: var(--text);">
+    <!-- Barra de busca moderna -->
+    <div class="search-bar">
+      <div class="search-input-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Buscar registros...">
+      </div>
+      <div class="filter-buttons">
+        <select id="filterType" class="filter-select">
           <option value="all">Todos</option>
-          <option value="photo">📸 Fotos</option>
-          <option value="video">🎬 Vídeos</option>
-          <option value="location">📍 Localizações</option>
+          <option value="photo">Fotos</option>
+          <option value="video">Vídeos</option>
+          <option value="location">Locais</option>
         </select>
-        <select id="filterSort" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.1); color: var(--text);">
-          <option value="newest">Mais recentes</option>
-          <option value="oldest">Mais antigos</option>
-          <option value="withNotes">Com observações</option>
+        <select id="filterSort" class="filter-select">
+          <option value="newest">Recentes</option>
+          <option value="oldest">Antigos</option>
+          <option value="withNotes">Com notas</option>
         </select>
       </div>
     </div>
 
     <!-- Modo seleção -->
-    <button class="btn btn-secondary btn-small" id="selectModeBtn" style="margin-bottom: 12px;">☑️ Selecionar</button>
+    <button class="btn btn-outline btn-small select-mode-btn" id="selectModeBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 11 12 14 22 4"/>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+      Selecionar
+    </button>
 
     <!-- Barra de seleção -->
     <div id="selectionBar" class="selection-bar" style="display: none;">
-      <span id="selectedCount">0 selecionados</span>
-      <button class="btn btn-primary btn-small" id="shareSelectedBtn">📤 Compartilhar</button>
-      <button class="btn btn-secondary btn-small" id="cancelSelectionBtn">Cancelar</button>
+      <span id="selectedCount" class="selected-count">0 selecionados</span>
+      <div class="selection-actions">
+        <button class="btn btn-primary btn-small" id="shareSelectedBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+            <polyline points="16 6 12 2 8 6"/>
+            <line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+          Compartilhar
+        </button>
+        <button class="btn btn-ghost btn-small" id="cancelSelectionBtn">Cancelar</button>
+      </div>
     </div>
 
-    <div id="recordsList"></div>
+    <div id="recordsList" class="records-list"></div>
+
+    <!-- Estado vazio com ilustração -->
     <div id="emptyState" class="empty-state">
-      <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-      <p>Nenhum registro ainda</p>
-      <p style="font-size: 13px;">Capture fotos ou localizações para começar</p>
+      <div class="empty-illustration">
+        <svg viewBox="0 0 200 200" fill="none">
+          <circle cx="100" cy="100" r="80" fill="url(#emptyGradient)" opacity="0.1"/>
+          <path d="M100 40c-33.137 0-60 26.863-60 60 0 40 60 80 60 80s60-40 60-80c0-33.137-26.863-60-60-60z" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/>
+          <circle cx="100" cy="95" r="20" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/>
+          <path d="M70 150l15 15M130 150l-15 15" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+          <defs>
+            <linearGradient id="emptyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#D4A017"/>
+              <stop offset="100%" stop-color="#F4C430"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <h3>Nenhum registro ainda</h3>
+      <p>Capture fotos, vídeos ou localizações<br>para começar a documentar</p>
     </div>
   </div>
 
   <!-- View: Mapa -->
-
   <div id="map" class="view">
     <!-- Controles do mapa -->
     <div class="map-controls">
       <button class="map-control-btn" id="toggleHighwayBtn" title="Mostrar pontos notáveis">
-        🛣️
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M2 12h20M12 2v20"/>
+          <circle cx="6" cy="12" r="2"/>
+          <circle cx="18" cy="12" r="2"/>
+        </svg>
       </button>
     </div>
 
     <!-- Painel de filtros dos pontos notáveis -->
     <div id="highwayFiltersPanel" class="highway-filters-panel" style="display: none;">
       <div class="filters-header">
-        <span>Filtros</span>
-        <button class="close-filters-btn" id="closeFiltersBtn">×</button>
+        <h4>Filtros</h4>
+        <button class="btn-close" id="closeFiltersBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
       <div class="filters-content">
         <div class="filter-group">
-          <label>Rodovia:</label>
+          <label>Rodovia</label>
           <select id="filterBR">
             <option value="all">Todas</option>
             <option value="101">BR-101</option>
@@ -268,7 +591,7 @@
           </select>
         </div>
         <div class="filter-group">
-          <label>Tipo:</label>
+          <label>Tipo</label>
           <select id="filterTipo">
             <option value="all">Todos</option>
             <option value="prf">Posto PRF</option>
@@ -284,102 +607,240 @@
           </select>
         </div>
         <div class="filter-group">
-          <label>Buscar:</label>
+          <label>Buscar</label>
           <input type="text" id="filterSearch" placeholder="Nome, município ou km...">
         </div>
         <div class="filter-stats" id="filterStats"></div>
       </div>
     </div>
 
-    <div id="mapContainer" style="width: 100%; height: calc(100vh - 140px); border-radius: 12px; overflow: hidden;"></div>
+    <div id="mapContainer"></div>
   </div>
 
   <!-- View: Configurações -->
-
   <div id="settings" class="view">
-    <div class="card">
-      <h3 style="margin-bottom: 16px;">💾 Backup dos Dados</h3>
-      <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
-        Exporte seus dados para não perder fotos, vídeos e localizações caso limpe o cache do navegador.
-      </p>
-      <div class="btn-group" style="flex-direction: column; gap: 12px;">
-        <button class="btn btn-primary" id="exportBackupBtn">📤 Exportar Backup</button>
-        <button class="btn btn-secondary" id="importBackupBtn">📥 Importar Backup</button>
-        <input type="file" id="importFileInput" accept=".json" style="display: none;">
+    <div class="settings-section">
+      <div class="settings-card">
+        <div class="settings-icon backup">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <div class="settings-content">
+          <h3>Backup dos Dados</h3>
+          <p>Exporte seus dados para manter suas fotos, vídeos e localizações seguras.</p>
+          <div class="settings-actions">
+            <button class="btn btn-primary" id="exportBackupBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Exportar
+            </button>
+            <button class="btn btn-outline" id="importBackupBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Importar
+            </button>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;">
+          </div>
+        </div>
       </div>
     </div>
-    <div class="card">
-      <h3 style="margin-bottom: 16px;">⚠️ Zona de Perigo</h3>
-      <button class="btn btn-danger" id="clearAllDataBtn">🗑️ Apagar Todos os Dados</button>
+
+    <div class="settings-section danger">
+      <div class="settings-card">
+        <div class="settings-icon danger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div class="settings-content">
+          <h3>Zona de Perigo</h3>
+          <p>Ação irreversível. Todos os dados serão permanentemente excluídos.</p>
+          <button class="btn btn-danger" id="clearAllDataBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              <line x1="10" y1="11" x2="10" y2="17"/>
+              <line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+            Apagar Todos os Dados
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Versão do app -->
+    <div class="app-version">
+      <span>GeoFotos PRF v2.0</span>
+      <span class="version-divider">•</span>
+      <span>Sergipe</span>
     </div>
   </div>
 
   <!-- Modal de detalhes -->
-
   <div class="modal-overlay" id="detailModal">
     <div class="modal">
-      <div class="modal-header">Detalhes do Registro</div>
+      <div class="modal-header">
+        <h3>Detalhes do Registro</h3>
+        <button class="btn-close" id="closeModalBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
       <div class="modal-body" id="modalContent"></div>
       <div class="modal-footer">
-        <button class="btn btn-secondary btn-small" id="closeModalBtn">Fechar</button>
-        <button class="btn btn-secondary btn-small" id="editRecordBtn">✏️ Editar</button>
-        <button class="btn btn-danger btn-small" id="deleteRecordBtn">Excluir</button>
-        <button class="btn btn-secondary btn-small" id="savePhotoModalBtn" style="display:none;">💾 Foto</button>
-        <button class="btn btn-primary btn-small" id="shareRecordBtn">Enviar</button>
+        <button class="btn btn-ghost btn-small" id="editRecordBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Editar
+        </button>
+        <button class="btn btn-ghost btn-small" id="savePhotoModalBtn" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Salvar Foto
+        </button>
+        <button class="btn btn-danger-ghost btn-small" id="deleteRecordBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          Excluir
+        </button>
+        <button class="btn btn-primary btn-small" id="shareRecordBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+            <polyline points="16 6 12 2 8 6"/>
+            <line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+          Enviar
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Modal de edição -->
-
   <div class="modal-overlay" id="editModal">
     <div class="modal">
-      <div class="modal-header">Editar Registro</div>
+      <div class="modal-header">
+        <h3>Editar Registro</h3>
+        <button class="btn-close" id="cancelEditBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
       <div class="modal-body">
-        <label style="font-size: 12px; color: var(--text-secondary);">Observações:</label>
-        <div class="textarea-wrapper">
-          <textarea id="editNotesInput" placeholder="Observações..."></textarea>
-          <button type="button" class="btn-mic" id="micBtnEdit" title="Falar observação">
-            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-          </button>
-        </div>
-        <div id="editTagsContainer" style="margin-top: 12px;">
-          <label style="font-size: 12px; color: var(--text-secondary);">Tags:</label>
-          <div id="editSelectedTags" class="selected-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0;"></div>
-          <div style="display: flex; gap: 8px;">
-            <input type="text" id="editTagInput" placeholder="Nova tag..." style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.05); color: var(--text);">
-            <button type="button" class="btn btn-secondary btn-small" id="addEditTagBtn">+</button>
+        <div class="form-group">
+          <label class="form-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Observações
+          </label>
+          <div class="textarea-wrapper">
+            <textarea id="editNotesInput" placeholder="Observações..."></textarea>
+            <button type="button" class="btn-mic" id="micBtnEdit" title="Falar observação">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
           </div>
-          <div id="editSuggestedTags" class="suggested-tags" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px;"></div>
+        </div>
+        <div class="form-group" id="editTagsContainer">
+          <label class="form-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+              <line x1="7" y1="7" x2="7.01" y2="7"/>
+            </svg>
+            Tags
+          </label>
+          <div id="editSelectedTags" class="selected-tags"></div>
+          <div class="tag-input-wrapper">
+            <input type="text" id="editTagInput" placeholder="Adicionar tag...">
+            <button type="button" class="btn-tag-add" id="addEditTagBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+          <div id="editSuggestedTags" class="suggested-tags"></div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary btn-small" id="cancelEditBtn">Cancelar</button>
-        <button class="btn btn-primary btn-small" id="saveEditBtn">Salvar</button>
+        <button class="btn btn-ghost" id="cancelEditModalBtn">Cancelar</button>
+        <button class="btn btn-primary" id="saveEditBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Salvar
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Toast -->
-
-  <div class="toast" id="toast"></div>
+  <!-- Toast Moderno -->
+  <div class="toast" id="toast">
+    <div class="toast-icon"></div>
+    <span class="toast-message"></span>
+  </div>
 
   <!-- Install prompt Android -->
-
   <div class="install-prompt" id="installPrompt">
-    <p><strong>Instalar GeoFotos?</strong><br>Adicione à tela inicial para acesso rápido.</p>
-    <div class="btn-group">
-      <button class="btn btn-secondary btn-small" id="dismissInstall">Agora não</button>
+    <div class="install-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    </div>
+    <div class="install-content">
+      <strong>Instalar GeoFotos?</strong>
+      <p>Adicione à tela inicial para acesso rápido e uso offline.</p>
+    </div>
+    <div class="install-actions">
+      <button class="btn btn-ghost btn-small" id="dismissInstall">Agora não</button>
       <button class="btn btn-primary btn-small" id="installBtn">Instalar</button>
     </div>
   </div>
 
   <!-- Install prompt iOS -->
-
-  <div class="install-prompt" id="iosInstallPrompt">
-    <p><strong>Instalar GeoFotos</strong><br>Toque em <span style="font-size:18px;">⬆️</span> e depois em <strong>"Adicionar à Tela de Início"</strong></p>
-    <div class="btn-group">
-      <button class="btn btn-secondary btn-small" id="dismissIosInstall">Entendi</button>
+  <div class="install-prompt ios" id="iosInstallPrompt">
+    <div class="install-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+        <polyline points="16 6 12 2 8 6"/>
+        <line x1="12" y1="2" x2="12" y2="15"/>
+      </svg>
+    </div>
+    <div class="install-content">
+      <strong>Instalar GeoFotos</strong>
+      <p>Toque em <span class="ios-share-icon">⬆</span> e depois em <strong>"Adicionar à Tela de Início"</strong></p>
+    </div>
+    <div class="install-actions">
+      <button class="btn btn-ghost btn-small" id="dismissIosInstall">Entendi</button>
     </div>
   </div>
 
@@ -393,6 +854,5 @@
   <script src="js/backup.js"></script>
   <script src="js/map.js"></script>
   <script src="js/app.js"></script>
-
 </body>
 </html>

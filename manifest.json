@@ -1,13 +1,14 @@
 {
-  "name": "GeoFotos",
+  "name": "GeoFotos PRF",
   "short_name": "GeoFotos",
-  "description": "Capture fotos e localizações com coordenadas separadas",
+  "description": "Capture fotos e localizações com precisão GPS profissional - PRF Sergipe",
   "start_url": "/Geofotos/",
   "scope": "/Geofotos/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#0a0f1a",
+  "theme_color": "#0a0f1a",
   "orientation": "portrait",
+  "categories": ["utilities", "productivity"],
   "icons": [
     {
       "src": "/Geofotos/icons/icon-192.png",
