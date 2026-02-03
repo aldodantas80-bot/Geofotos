@@ -558,7 +558,9 @@
 
   <!-- View: Mapa -->
   <div id="map" class="view">
-    <!-- Controles do mapa -->
+    <div id="mapContainer"></div>
+
+    <!-- Controles do mapa (devem vir DEPOIS do mapContainer para ficar acima) -->
     <div class="map-controls">
       <button class="map-control-btn" id="toggleHighwayBtn" title="Mostrar pontos notáveis">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -612,8 +614,6 @@
         <div class="filter-stats" id="filterStats"></div>
       </div>
     </div>
-
-    <div id="mapContainer"></div>
   </div>
 
   <!-- View: Configurações -->
