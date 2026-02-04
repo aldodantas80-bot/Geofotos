@@ -474,10 +474,11 @@ function renderModalLocationInfo(locationInfo) {
   if (!locationInfo) return '';
   let html = '<div class="location-info-container" style="margin-top:12px;">';
 
-  if (locationInfo.address?.fullAddress) {
+  const displayAddr = getDisplayAddress(locationInfo.address);
+  if (displayAddr) {
     html += `<div class="location-info-item">
       <div class="location-info-label">ENDEREÇO</div>
-      <div class="location-info-value">${locationInfo.address.fullAddress}</div>
+      <div class="location-info-value">${displayAddr}</div>
     </div>`;
   }
 
