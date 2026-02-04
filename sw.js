@@ -1,4 +1,4 @@
-const CACHE_NAME = 'geofotos-v16';
+const CACHE_NAME = 'geofotos-v17';
 const BASE_PATH = '/Geofotos';
 const urlsToCache = [
   `${BASE_PATH}/`,
@@ -10,6 +10,7 @@ const urlsToCache = [
   `${BASE_PATH}/js/utils.js`,
   `${BASE_PATH}/js/db.js`,
   `${BASE_PATH}/js/speech.js`,
+  `${BASE_PATH}/js/geocode.js`,
   `${BASE_PATH}/js/capture.js`,
   `${BASE_PATH}/js/history.js`,
   `${BASE_PATH}/js/backup.js`,
@@ -57,8 +58,35 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch - Cache first, fallback to network
+// Fetch - Cache first para app, network only para APIs externas
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // Não interceptar chamadas a APIs externas (Nominatim, Overpass, etc.)
+  if (url.origin !== location.origin) {
+    // Leaflet tiles e libs são cacheáveis
+    if (url.hostname === 'unpkg.com' || url.hostname.includes('tile.openstreetmap.org')) {
+      event.respondWith(
+        caches.match(event.request)
+          .then((cachedResponse) => {
+            if (cachedResponse) return cachedResponse;
+            return fetch(event.request).then((response) => {
+              if (!response || response.status !== 200) return response;
+              const responseClone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+              return response;
+            });
+          })
+      );
+      return;
+    }
+
+    // APIs dinâmicas (Nominatim, Overpass) - sempre network
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Cache first para arquivos do app
   event.respondWith(
     caches.match(event.request)
       .then((cachedResponse) => {
@@ -67,8 +95,7 @@ self.addEventListener('fetch', (event) => {
         }
         return fetch(event.request)
           .then((response) => {
-            // Só cacheia respostas válidas
-            if (!response || response.status !== 200 || response.type !== 'basic') {
+            if (!response || response.status !== 200) {
               return response;
             }
             const responseClone = response.clone();
@@ -77,7 +104,6 @@ self.addEventListener('fetch', (event) => {
             return response;
           })
           .catch(() => {
-            // Offline e não está no cache - retorna página offline se disponível
             console.log('Falha ao buscar:', event.request.url);
           });
       })

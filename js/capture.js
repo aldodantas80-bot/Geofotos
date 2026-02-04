@@ -4,11 +4,14 @@
 let currentPhotos = []; // Múltiplas fotos
 let currentPhotoCoords = null;
 let currentPhotoAccuracy = null;
+let currentPhotoLocationInfo = null;
 let currentVideoData = null;
 let currentVideoCoords = null;
 let currentVideoAccuracy = null;
+let currentVideoLocationInfo = null;
 let currentLocationCoords = null;
 let currentLocationAccuracy = null;
+let currentLocationInfo = null;
 
 // Tags selecionadas para cada tipo
 let currentPhotoTags = [];
@@ -326,11 +329,24 @@ function initCapture() {
           const pos = await getCurrentPosition();
           currentPhotoCoords = pos;
           currentPhotoAccuracy = pos.accuracy;
+          currentPhotoLocationInfo = null;
           previewCoords.innerHTML = formatCoords(pos.lat, pos.lng) + formatAccuracyIndicator(pos.accuracy);
+          // Busca endereço em paralelo (não bloqueia)
+          const photoLocInfo = document.getElementById('photoLocationInfo');
+          if (photoLocInfo) {
+            photoLocInfo.innerHTML = '<span class="location-info-loading">Buscando endereço e referências...</span>';
+            getLocationInfo(pos.lat, pos.lng).then(info => {
+              currentPhotoLocationInfo = info;
+              renderLocationInfoPreview('photoLocationInfo', info);
+            }).catch(() => {
+              photoLocInfo.innerHTML = '<span class="location-info-empty">Não foi possível obter endereço (sem internet?)</span>';
+            });
+          }
         } catch (err) {
           previewCoords.innerHTML = err.message;
           currentPhotoCoords = null;
           currentPhotoAccuracy = null;
+          currentPhotoLocationInfo = null;
         }
       }
     };
@@ -343,6 +359,7 @@ function initCapture() {
     currentPhotos = [];
     currentPhotoCoords = null;
     currentPhotoAccuracy = null;
+    currentPhotoLocationInfo = null;
     currentPhotoTags = [];
     renderPhotoGallery();
   });
@@ -366,6 +383,7 @@ function initCapture() {
       accuracy: currentPhotoAccuracy,
       notes: notesInput.value.trim(),
       tags: [...currentPhotoTags],
+      locationInfo: currentPhotoLocationInfo,
       createdAt: new Date().toISOString()
     };
 
@@ -375,6 +393,7 @@ function initCapture() {
     currentPhotos = [];
     currentPhotoCoords = null;
     currentPhotoAccuracy = null;
+    currentPhotoLocationInfo = null;
     currentPhotoTags = [];
     renderPhotoGallery();
   });
@@ -427,11 +446,24 @@ function initCapture() {
         const pos = await getCurrentPosition();
         currentVideoCoords = pos;
         currentVideoAccuracy = pos.accuracy;
+        currentVideoLocationInfo = null;
         previewVideoCoords.innerHTML = formatCoords(pos.lat, pos.lng) + formatAccuracyIndicator(pos.accuracy);
+        // Busca endereço em paralelo (não bloqueia)
+        const videoLocInfo = document.getElementById('videoLocationInfo');
+        if (videoLocInfo) {
+          videoLocInfo.innerHTML = '<span class="location-info-loading">Buscando endereço e referências...</span>';
+          getLocationInfo(pos.lat, pos.lng).then(info => {
+            currentVideoLocationInfo = info;
+            renderLocationInfoPreview('videoLocationInfo', info);
+          }).catch(() => {
+            videoLocInfo.innerHTML = '<span class="location-info-empty">Não foi possível obter endereço (sem internet?)</span>';
+          });
+        }
       } catch (err) {
         previewVideoCoords.innerHTML = err.message;
         currentVideoCoords = null;
         currentVideoAccuracy = null;
+        currentVideoLocationInfo = null;
       }
     };
     reader.readAsDataURL(file);
@@ -444,6 +476,7 @@ function initCapture() {
     currentVideoData = null;
     currentVideoCoords = null;
     currentVideoAccuracy = null;
+    currentVideoLocationInfo = null;
     currentVideoTags = [];
   });
 
@@ -461,6 +494,7 @@ function initCapture() {
       accuracy: currentVideoAccuracy,
       notes: videoNotesInput.value.trim(),
       tags: [...currentVideoTags],
+      locationInfo: currentVideoLocationInfo,
       createdAt: new Date().toISOString()
     };
 
@@ -471,6 +505,7 @@ function initCapture() {
     currentVideoData = null;
     currentVideoCoords = null;
     currentVideoAccuracy = null;
+    currentVideoLocationInfo = null;
     currentVideoTags = [];
   });
 
@@ -509,11 +544,24 @@ function initCapture() {
       const pos = await getCurrentPosition();
       currentLocationCoords = pos;
       currentLocationAccuracy = pos.accuracy;
+      currentLocationInfo = null;
       locationCoords.innerHTML = formatCoords(pos.lat, pos.lng) + formatAccuracyIndicator(pos.accuracy);
+      // Busca endereço em paralelo (não bloqueia)
+      const locLocInfo = document.getElementById('locationLocationInfo');
+      if (locLocInfo) {
+        locLocInfo.innerHTML = '<span class="location-info-loading">Buscando endereço e referências...</span>';
+        getLocationInfo(pos.lat, pos.lng).then(info => {
+          currentLocationInfo = info;
+          renderLocationInfoPreview('locationLocationInfo', info);
+        }).catch(() => {
+          locLocInfo.innerHTML = '<span class="location-info-empty">Não foi possível obter endereço (sem internet?)</span>';
+        });
+      }
     } catch (err) {
       locationCoords.innerHTML = err.message;
       currentLocationCoords = null;
       currentLocationAccuracy = null;
+      currentLocationInfo = null;
     }
   });
 
@@ -521,6 +569,7 @@ function initCapture() {
     locationPreview.style.display = 'none';
     currentLocationCoords = null;
     currentLocationAccuracy = null;
+    currentLocationInfo = null;
     currentLocationTags = [];
   });
 
@@ -537,6 +586,7 @@ function initCapture() {
       accuracy: currentLocationAccuracy,
       notes: locationNotesInput.value.trim(),
       tags: [...currentLocationTags],
+      locationInfo: currentLocationInfo,
       createdAt: new Date().toISOString()
     };
 
@@ -545,6 +595,7 @@ function initCapture() {
     locationPreview.style.display = 'none';
     currentLocationCoords = null;
     currentLocationAccuracy = null;
+    currentLocationInfo = null;
     currentLocationTags = [];
   });
 
