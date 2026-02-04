@@ -290,6 +290,138 @@ function formatAccuracyIndicator(accuracy) {
   </div>`;
 }
 
+// Mostrar botões de geocodificação
+function showGeocodeButtons(type) {
+  const btnsContainer = document.getElementById(`${type}GeocodeButtons`);
+  if (btnsContainer) {
+    btnsContainer.style.display = 'flex';
+  }
+  // Limpar resultados anteriores
+  const locInfo = document.getElementById(`${type}LocationInfo`);
+  if (locInfo) locInfo.innerHTML = '';
+}
+
+// Esconder botões de geocodificação
+function hideGeocodeButtons(type) {
+  const btnsContainer = document.getElementById(`${type}GeocodeButtons`);
+  if (btnsContainer) {
+    btnsContainer.style.display = 'none';
+  }
+  const locInfo = document.getElementById(`${type}LocationInfo`);
+  if (locInfo) locInfo.innerHTML = '';
+}
+
+// Buscar endereço sob demanda para captura
+async function fetchCaptureAddress(type) {
+  let coords, locationInfoRef;
+  if (type === 'photo') {
+    coords = currentPhotoCoords;
+  } else if (type === 'video') {
+    coords = currentVideoCoords;
+  } else {
+    coords = currentLocationCoords;
+  }
+
+  if (!coords) {
+    showToast('Aguarde a localização');
+    return;
+  }
+
+  const btn = document.getElementById(`${type}AddressBtn`);
+  const locInfo = document.getElementById(`${type}LocationInfo`);
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="geocode-btn-loading">Buscando...</span>';
+
+  try {
+    const result = await getAddressInfo(coords.lat, coords.lng);
+
+    // Merge no locationInfo
+    if (type === 'photo') {
+      if (!currentPhotoLocationInfo) currentPhotoLocationInfo = {};
+      currentPhotoLocationInfo.address = result.address;
+      currentPhotoLocationInfo.highway = result.highway;
+      renderLocationInfoPreview('photoLocationInfo', currentPhotoLocationInfo);
+    } else if (type === 'video') {
+      if (!currentVideoLocationInfo) currentVideoLocationInfo = {};
+      currentVideoLocationInfo.address = result.address;
+      currentVideoLocationInfo.highway = result.highway;
+      renderLocationInfoPreview('videoLocationInfo', currentVideoLocationInfo);
+    } else {
+      if (!currentLocationInfo) currentLocationInfo = {};
+      currentLocationInfo.address = result.address;
+      currentLocationInfo.highway = result.highway;
+      renderLocationInfoPreview('locationLocationInfo', currentLocationInfo);
+    }
+  } catch (err) {
+    if (locInfo) {
+      locInfo.innerHTML = '<span class="location-info-empty">Não foi possível obter endereço</span>';
+    }
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+    <circle cx="12" cy="10" r="3"/>
+  </svg> Endereço`;
+}
+
+// Buscar referências próximas sob demanda para captura
+async function fetchCaptureReferences(type) {
+  let coords;
+  if (type === 'photo') {
+    coords = currentPhotoCoords;
+  } else if (type === 'video') {
+    coords = currentVideoCoords;
+  } else {
+    coords = currentLocationCoords;
+  }
+
+  if (!coords) {
+    showToast('Aguarde a localização');
+    return;
+  }
+
+  const btn = document.getElementById(`${type}ReferencesBtn`);
+  const locInfo = document.getElementById(`${type}LocationInfo`);
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="geocode-btn-loading">Buscando...</span>';
+
+  try {
+    const pois = await findNearbyPOIs(coords.lat, coords.lng);
+
+    // Merge no locationInfo
+    if (type === 'photo') {
+      if (!currentPhotoLocationInfo) currentPhotoLocationInfo = {};
+      currentPhotoLocationInfo.pois = pois;
+      renderLocationInfoPreview('photoLocationInfo', currentPhotoLocationInfo);
+    } else if (type === 'video') {
+      if (!currentVideoLocationInfo) currentVideoLocationInfo = {};
+      currentVideoLocationInfo.pois = pois;
+      renderLocationInfoPreview('videoLocationInfo', currentVideoLocationInfo);
+    } else {
+      if (!currentLocationInfo) currentLocationInfo = {};
+      currentLocationInfo.pois = pois;
+      renderLocationInfoPreview('locationLocationInfo', currentLocationInfo);
+    }
+
+    if (pois.length === 0) {
+      showToast('Nenhuma referência encontrada em 100m');
+    }
+  } catch (err) {
+    if (locInfo) {
+      locInfo.innerHTML = '<span class="location-info-empty">Não foi possível buscar referências</span>';
+    }
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg> Referências`;
+}
+
 // Inicializar captura
 function initCapture() {
   // ========== Foto + Localização ==========
@@ -324,6 +456,7 @@ function initCapture() {
         renderSelectedTags('selectedTagsPhoto', currentPhotoTags, 'photo');
         renderSuggestedTags('suggestedTagsPhoto', 'tagInputPhoto', 'photo');
         previewCoords.innerHTML = 'Obtendo localização...';
+        hideGeocodeButtons('photo');
 
         try {
           const pos = await getCurrentPosition();
@@ -331,17 +464,7 @@ function initCapture() {
           currentPhotoAccuracy = pos.accuracy;
           currentPhotoLocationInfo = null;
           previewCoords.innerHTML = formatCoords(pos.lat, pos.lng) + formatAccuracyIndicator(pos.accuracy);
-          // Busca endereço em paralelo (não bloqueia)
-          const photoLocInfo = document.getElementById('photoLocationInfo');
-          if (photoLocInfo) {
-            photoLocInfo.innerHTML = '<span class="location-info-loading">Buscando endereço e referências...</span>';
-            getLocationInfo(pos.lat, pos.lng).then(info => {
-              currentPhotoLocationInfo = info;
-              renderLocationInfoPreview('photoLocationInfo', info);
-            }).catch(() => {
-              photoLocInfo.innerHTML = '<span class="location-info-empty">Não foi possível obter endereço (sem internet?)</span>';
-            });
-          }
+          showGeocodeButtons('photo');
         } catch (err) {
           previewCoords.innerHTML = err.message;
           currentPhotoCoords = null;
@@ -354,6 +477,10 @@ function initCapture() {
     cameraInput.value = '';
   });
 
+  // Botões de geocodificação - Foto
+  document.getElementById('photoAddressBtn').addEventListener('click', () => fetchCaptureAddress('photo'));
+  document.getElementById('photoReferencesBtn').addEventListener('click', () => fetchCaptureReferences('photo'));
+
   document.getElementById('cancelPhotoBtn').addEventListener('click', () => {
     photoPreview.style.display = 'none';
     currentPhotos = [];
@@ -361,6 +488,7 @@ function initCapture() {
     currentPhotoAccuracy = null;
     currentPhotoLocationInfo = null;
     currentPhotoTags = [];
+    hideGeocodeButtons('photo');
     renderPhotoGallery();
   });
 
@@ -395,6 +523,7 @@ function initCapture() {
     currentPhotoAccuracy = null;
     currentPhotoLocationInfo = null;
     currentPhotoTags = [];
+    hideGeocodeButtons('photo');
     renderPhotoGallery();
   });
 
@@ -441,6 +570,7 @@ function initCapture() {
       renderSelectedTags('selectedTagsVideo', currentVideoTags, 'video');
       renderSuggestedTags('suggestedTagsVideo', 'tagInputVideo', 'video');
       previewVideoCoords.innerHTML = 'Obtendo localização...';
+      hideGeocodeButtons('video');
 
       try {
         const pos = await getCurrentPosition();
@@ -448,17 +578,7 @@ function initCapture() {
         currentVideoAccuracy = pos.accuracy;
         currentVideoLocationInfo = null;
         previewVideoCoords.innerHTML = formatCoords(pos.lat, pos.lng) + formatAccuracyIndicator(pos.accuracy);
-        // Busca endereço em paralelo (não bloqueia)
-        const videoLocInfo = document.getElementById('videoLocationInfo');
-        if (videoLocInfo) {
-          videoLocInfo.innerHTML = '<span class="location-info-loading">Buscando endereço e referências...</span>';
-          getLocationInfo(pos.lat, pos.lng).then(info => {
-            currentVideoLocationInfo = info;
-            renderLocationInfoPreview('videoLocationInfo', info);
-          }).catch(() => {
-            videoLocInfo.innerHTML = '<span class="location-info-empty">Não foi possível obter endereço (sem internet?)</span>';
-          });
-        }
+        showGeocodeButtons('video');
       } catch (err) {
         previewVideoCoords.innerHTML = err.message;
         currentVideoCoords = null;
@@ -470,6 +590,10 @@ function initCapture() {
     videoInput.value = '';
   });
 
+  // Botões de geocodificação - Vídeo
+  document.getElementById('videoAddressBtn').addEventListener('click', () => fetchCaptureAddress('video'));
+  document.getElementById('videoReferencesBtn').addEventListener('click', () => fetchCaptureReferences('video'));
+
   document.getElementById('cancelVideoBtn').addEventListener('click', () => {
     videoPreview.style.display = 'none';
     previewVideo.src = '';
@@ -478,6 +602,7 @@ function initCapture() {
     currentVideoAccuracy = null;
     currentVideoLocationInfo = null;
     currentVideoTags = [];
+    hideGeocodeButtons('video');
   });
 
   document.getElementById('saveVideoBtn').addEventListener('click', async () => {
@@ -507,6 +632,7 @@ function initCapture() {
     currentVideoAccuracy = null;
     currentVideoLocationInfo = null;
     currentVideoTags = [];
+    hideGeocodeButtons('video');
   });
 
   // Event listeners para tags de vídeo
@@ -539,6 +665,7 @@ function initCapture() {
     currentLocationTags = [];
     renderSelectedTags('selectedTagsLocation', currentLocationTags, 'location');
     renderSuggestedTags('suggestedTagsLocation', 'tagInputLocation', 'location');
+    hideGeocodeButtons('location');
 
     try {
       const pos = await getCurrentPosition();
@@ -546,17 +673,7 @@ function initCapture() {
       currentLocationAccuracy = pos.accuracy;
       currentLocationInfo = null;
       locationCoords.innerHTML = formatCoords(pos.lat, pos.lng) + formatAccuracyIndicator(pos.accuracy);
-      // Busca endereço em paralelo (não bloqueia)
-      const locLocInfo = document.getElementById('locationLocationInfo');
-      if (locLocInfo) {
-        locLocInfo.innerHTML = '<span class="location-info-loading">Buscando endereço e referências...</span>';
-        getLocationInfo(pos.lat, pos.lng).then(info => {
-          currentLocationInfo = info;
-          renderLocationInfoPreview('locationLocationInfo', info);
-        }).catch(() => {
-          locLocInfo.innerHTML = '<span class="location-info-empty">Não foi possível obter endereço (sem internet?)</span>';
-        });
-      }
+      showGeocodeButtons('location');
     } catch (err) {
       locationCoords.innerHTML = err.message;
       currentLocationCoords = null;
@@ -565,12 +682,17 @@ function initCapture() {
     }
   });
 
+  // Botões de geocodificação - Localização
+  document.getElementById('locationAddressBtn').addEventListener('click', () => fetchCaptureAddress('location'));
+  document.getElementById('locationReferencesBtn').addEventListener('click', () => fetchCaptureReferences('location'));
+
   document.getElementById('cancelLocationBtn').addEventListener('click', () => {
     locationPreview.style.display = 'none';
     currentLocationCoords = null;
     currentLocationAccuracy = null;
     currentLocationInfo = null;
     currentLocationTags = [];
+    hideGeocodeButtons('location');
   });
 
   document.getElementById('saveLocationBtn').addEventListener('click', async () => {
@@ -597,6 +719,7 @@ function initCapture() {
     currentLocationAccuracy = null;
     currentLocationInfo = null;
     currentLocationTags = [];
+    hideGeocodeButtons('location');
   });
 
   // Event listeners para tags de localização

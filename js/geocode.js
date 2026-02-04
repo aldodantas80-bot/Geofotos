@@ -12,7 +12,7 @@ async function waitRateLimit() {
   lastGeoRequest = Date.now();
 }
 
-// Geocodificação reversa - retorna endereço
+// Geocodificação reversa - retorna endereço simplificado
 async function reverseGeocode(lat, lng) {
   try {
     await waitRateLimit();
@@ -22,13 +22,39 @@ async function reverseGeocode(lat, lng) {
     );
     if (!response.ok) throw new Error('Erro na requisição');
     const data = await response.json();
+
+    const road = data.address?.road || null;
+    const houseNumber = data.address?.house_number || null;
+    const neighbourhood = data.address?.neighbourhood || data.address?.suburb || null;
+    const city = data.address?.city || data.address?.town || data.address?.village || null;
+    const state = data.address?.state || null;
+    const postcode = data.address?.postcode || null;
+
+    // Montar endereço simplificado: Rua, Número, Bairro, CEP, Cidade/Estado
+    const parts = [];
+    if (road) {
+      let roadPart = road;
+      if (houseNumber) roadPart += `, ${houseNumber}`;
+      parts.push(roadPart);
+    }
+    if (neighbourhood) parts.push(neighbourhood);
+    if (postcode) parts.push(postcode);
+    if (city) {
+      let cityState = city;
+      if (state) cityState += `/${state}`;
+      parts.push(cityState);
+    }
+    const formattedAddress = parts.join(', ') || data.display_name || null;
+
     return {
+      formattedAddress,
       fullAddress: data.display_name || null,
-      road: data.address?.road || null,
-      neighbourhood: data.address?.neighbourhood || data.address?.suburb || null,
-      city: data.address?.city || data.address?.town || data.address?.village || null,
-      state: data.address?.state || null,
-      postcode: data.address?.postcode || null
+      road,
+      houseNumber,
+      neighbourhood,
+      city,
+      state,
+      postcode
     };
   } catch (err) {
     console.log('Erro geocodificação:', err);
@@ -96,7 +122,7 @@ async function findHighwayInfo(lat, lng) {
 // Buscar pontos de referência próximos via Overpass API
 async function findNearbyPOIs(lat, lng) {
   try {
-    const radius = 500; // metros
+    const radius = 100; // metros
     const query = `
       [out:json][timeout:10];
       (
@@ -167,7 +193,16 @@ function getPOIIcon(type) {
   return icons[type] || '📌';
 }
 
-// Função principal: buscar todas as informações de localização
+// Buscar endereço + rodovia (sob demanda)
+async function getAddressInfo(lat, lng) {
+  const [address, highway] = await Promise.all([
+    reverseGeocode(lat, lng),
+    findHighwayInfo(lat, lng)
+  ]);
+  return { address, highway };
+}
+
+// Função completa: buscar todas as informações de localização
 async function getLocationInfo(lat, lng) {
   const [address, highway, pois] = await Promise.all([
     reverseGeocode(lat, lng),
@@ -178,12 +213,19 @@ async function getLocationInfo(lat, lng) {
   return { address, highway, pois };
 }
 
+// Obter endereço formatado (usa formattedAddress se disponível, senão fullAddress)
+function getDisplayAddress(address) {
+  if (!address) return null;
+  return address.formattedAddress || address.fullAddress || null;
+}
+
 // Formatar informações de localização como texto (para copiar/compartilhar)
 function formatLocationInfo(locationInfo) {
   let text = '';
 
-  if (locationInfo?.address?.fullAddress) {
-    text += `📌 Endereço: ${locationInfo.address.fullAddress}\n`;
+  const displayAddr = getDisplayAddress(locationInfo?.address);
+  if (displayAddr) {
+    text += `📌 Endereço: ${displayAddr}\n`;
   }
 
   if (locationInfo?.highway?.highway) {
@@ -219,10 +261,11 @@ function renderLocationInfoPreview(containerId, info) {
 
   let html = '';
 
-  if (info.address?.fullAddress) {
+  const displayAddr = getDisplayAddress(info.address);
+  if (displayAddr) {
     html += `<div class="location-info-item">
       <div class="location-info-label">ENDEREÇO</div>
-      <div class="location-info-value">${info.address.fullAddress}</div>
+      <div class="location-info-value">${displayAddr}</div>
     </div>`;
   }
 

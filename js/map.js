@@ -2,6 +2,9 @@
 
 let mapInstance = null;
 let markers = [];
+let userLocationMarker = null;
+let userLocationCircle = null;
+let locationWatchId = null;
 
 function initMap() {
   if (mapInstance) return;
@@ -12,6 +15,9 @@ function initMap() {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
   }).addTo(mapInstance);
+
+  // Iniciar rastreamento de localização em tempo real
+  startLocationTracking();
 }
 
 async function loadMapMarkers() {
@@ -46,6 +52,63 @@ async function loadMapMarkers() {
   // Ajusta zoom para mostrar todos os pontos
   if (bounds.length > 0) {
     mapInstance.fitBounds(bounds, { padding: [20, 20] });
+  }
+}
+
+// Rastreamento de localização em tempo real no mapa
+function startLocationTracking() {
+  if (!navigator.geolocation || !mapInstance) return;
+
+  // Ícone azul pulsante para localização do usuário
+  const userIcon = L.divIcon({
+    className: 'user-location-icon',
+    html: '<div class="user-location-dot"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+  });
+
+  locationWatchId = navigator.geolocation.watchPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+
+      if (userLocationMarker) {
+        userLocationMarker.setLatLng([lat, lng]);
+      } else {
+        userLocationMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 })
+          .addTo(mapInstance)
+          .bindPopup('Você está aqui');
+      }
+
+      if (userLocationCircle) {
+        userLocationCircle.setLatLng([lat, lng]);
+        userLocationCircle.setRadius(accuracy);
+      } else {
+        userLocationCircle = L.circle([lat, lng], {
+          radius: accuracy,
+          color: '#4A90D9',
+          fillColor: '#4A90D9',
+          fillOpacity: 0.12,
+          weight: 1
+        }).addTo(mapInstance);
+      }
+    },
+    (error) => {
+      console.log('Erro ao rastrear localização no mapa:', error.message);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 30000,
+      maximumAge: 5000
+    }
+  );
+}
+
+function stopLocationTracking() {
+  if (locationWatchId !== null) {
+    navigator.geolocation.clearWatch(locationWatchId);
+    locationWatchId = null;
   }
 }
 

@@ -850,6 +850,53 @@ input[type="file"] {
   font-size: 13px;
 }
 
+/* Botões de geocodificação sob demanda */
+.geocode-buttons {
+  display: flex;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+}
+
+.geocode-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+.geocode-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.geocode-btn-loading {
+  font-size: 13px;
+}
+
+/* Localização do usuário no mapa */
+.user-location-icon {
+  background: transparent;
+  border: none;
+}
+
+.user-location-dot {
+  width: 16px;
+  height: 16px;
+  background: #4A90D9;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.4), 0 0 12px rgba(74, 144, 217, 0.3);
+  animation: userLocationPulse 2s ease-in-out infinite;
+}
+
+@keyframes userLocationPulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.4), 0 0 12px rgba(74, 144, 217, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(74, 144, 217, 0.15), 0 0 20px rgba(74, 144, 217, 0.2); }
+}
+
 /* ============================================
    FORM ELEMENTS
    ============================================ */
