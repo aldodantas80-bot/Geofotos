@@ -209,12 +209,6 @@ async function init() {
   initTagsManager();
   initPWAInstall();
   registerServiceWorker();
-
-  // Carregar pontos notáveis das rodovias
-  if (window.HighwayPoints) {
-    await window.HighwayPoints.load();
-    console.log('Highway points loaded');
-  }
 }
 
 // Iniciar aplicação quando DOM estiver pronto

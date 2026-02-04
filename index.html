@@ -18,10 +18,7 @@
 
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
   <title>GeoFotos PRF</title>
 </head>
 <body>
@@ -188,28 +185,6 @@
         <span class="coords-value" id="previewCoords">Obtendo localização...</span>
       </div>
 
-      <!-- KM Aproximado da Rodovia -->
-      <div class="km-display" id="photoKmDisplay" style="display: none;">
-        <div class="km-header">
-          <div class="km-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M2 12h20M12 2v20"/>
-              <circle cx="6" cy="12" r="2"/>
-              <circle cx="18" cy="12" r="2"/>
-            </svg>
-          </div>
-          <span class="km-title">Referência Rodoviária</span>
-        </div>
-        <div class="km-info" id="photoKmInfo"></div>
-        <div class="km-nearby" id="photoKmNearby"></div>
-        <button type="button" class="btn btn-outline btn-small km-use-btn" id="useKmRefPhoto">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          Usar como referência
-        </button>
-      </div>
-
       <div class="form-group">
         <label class="form-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -295,28 +270,6 @@
         <span class="coords-value" id="previewVideoCoords">Obtendo localização...</span>
       </div>
 
-      <!-- KM Aproximado da Rodovia -->
-      <div class="km-display" id="videoKmDisplay" style="display: none;">
-        <div class="km-header">
-          <div class="km-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M2 12h20M12 2v20"/>
-              <circle cx="6" cy="12" r="2"/>
-              <circle cx="18" cy="12" r="2"/>
-            </svg>
-          </div>
-          <span class="km-title">Referência Rodoviária</span>
-        </div>
-        <div class="km-info" id="videoKmInfo"></div>
-        <div class="km-nearby" id="videoKmNearby"></div>
-        <button type="button" class="btn btn-outline btn-small km-use-btn" id="useKmRefVideo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          Usar como referência
-        </button>
-      </div>
-
       <div class="form-group">
         <label class="form-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -398,28 +351,6 @@
           <span>Coordenadas</span>
         </div>
         <span class="coords-value" id="locationCoords">Obtendo localização...</span>
-      </div>
-
-      <!-- KM Aproximado da Rodovia -->
-      <div class="km-display" id="locationKmDisplay" style="display: none;">
-        <div class="km-header">
-          <div class="km-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M2 12h20M12 2v20"/>
-              <circle cx="6" cy="12" r="2"/>
-              <circle cx="18" cy="12" r="2"/>
-            </svg>
-          </div>
-          <span class="km-title">Referência Rodoviária</span>
-        </div>
-        <div class="km-info" id="locationKmInfo"></div>
-        <div class="km-nearby" id="locationKmNearby"></div>
-        <button type="button" class="btn btn-outline btn-small km-use-btn" id="useKmRefLocation">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          Usar como referência
-        </button>
       </div>
 
       <div class="form-group">
@@ -559,61 +490,6 @@
   <!-- View: Mapa -->
   <div id="map" class="view">
     <div id="mapContainer"></div>
-
-    <!-- Controles do mapa (devem vir DEPOIS do mapContainer para ficar acima) -->
-    <div class="map-controls">
-      <button class="map-control-btn" id="toggleHighwayBtn" title="Mostrar pontos notáveis">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M2 12h20M12 2v20"/>
-          <circle cx="6" cy="12" r="2"/>
-          <circle cx="18" cy="12" r="2"/>
-        </svg>
-      </button>
-    </div>
-
-    <!-- Painel de filtros dos pontos notáveis -->
-    <div id="highwayFiltersPanel" class="highway-filters-panel" style="display: none;">
-      <div class="filters-header">
-        <h4>Filtros</h4>
-        <button class="btn-close" id="closeFiltersBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-      <div class="filters-content">
-        <div class="filter-group">
-          <label>Rodovia</label>
-          <select id="filterBR">
-            <option value="all">Todas</option>
-            <option value="101">BR-101</option>
-            <option value="235">BR-235</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label>Tipo</label>
-          <select id="filterTipo">
-            <option value="all">Todos</option>
-            <option value="prf">Posto PRF</option>
-            <option value="ponte">Ponte</option>
-            <option value="viaduto">Viaduto</option>
-            <option value="acesso">Acesso</option>
-            <option value="posto">Posto Combustível</option>
-            <option value="fiscal">Posto Fiscal</option>
-            <option value="retorno">Retorno</option>
-            <option value="industria">Indústria</option>
-            <option value="comercio">Comércio</option>
-            <option value="referencia">Referência</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label>Buscar</label>
-          <input type="text" id="filterSearch" placeholder="Nome, município ou km...">
-        </div>
-        <div class="filter-stats" id="filterStats"></div>
-      </div>
-    </div>
   </div>
 
   <!-- View: Configurações -->
@@ -866,7 +742,6 @@
   <script src="js/utils.js"></script>
   <script src="js/db.js"></script>
   <script src="js/speech.js"></script>
-  <script src="js/highway-points.js"></script>
   <script src="js/capture.js"></script>
   <script src="js/history.js"></script>
   <script src="js/backup.js"></script>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'geofotos-v15';
+const CACHE_NAME = 'geofotos-v16';
 const BASE_PATH = '/Geofotos';
 const urlsToCache = [
   `${BASE_PATH}/`,
@@ -10,19 +10,14 @@ const urlsToCache = [
   `${BASE_PATH}/js/utils.js`,
   `${BASE_PATH}/js/db.js`,
   `${BASE_PATH}/js/speech.js`,
-  `${BASE_PATH}/js/highway-points.js`,
   `${BASE_PATH}/js/capture.js`,
   `${BASE_PATH}/js/history.js`,
   `${BASE_PATH}/js/backup.js`,
   `${BASE_PATH}/js/map.js`,
   `${BASE_PATH}/js/app.js`,
-  `${BASE_PATH}/data/highway-points.json`,
   `${BASE_PATH}/sw.js`,
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-  'https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css',
-  'https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css',
-  'https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js'
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 ];
 
 // Install
