@@ -805,6 +805,52 @@ input[type="file"] {
 }
 
 /* ============================================
+   LOCATION INFO (Geocodificação)
+   ============================================ */
+.location-info-container {
+  margin: var(--space-2) 0;
+}
+
+.location-info-item {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+}
+
+.location-info-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.location-info-value {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.location-info-poi {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.location-info-loading {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.location-info-empty {
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+
+/* ============================================
    FORM ELEMENTS
    ============================================ */
 .form-group {

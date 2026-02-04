@@ -91,6 +91,28 @@ function renderRecordTags(tags) {
   </div>`;
 }
 
+// Resumo de localização para listagem
+function formatRecordLocationSummary(record) {
+  if (!record.locationInfo) return '';
+  const li = record.locationInfo;
+  let parts = [];
+
+  if (li.highway?.highway) {
+    let hw = li.highway.highway;
+    if (li.highway.milestone?.km) hw += ` KM ${li.highway.milestone.km}`;
+    parts.push(`🛣️ ${hw}`);
+  }
+
+  if (li.address?.city) {
+    let loc = li.address.city;
+    if (li.address.state) loc += `/${li.address.state}`;
+    parts.push(loc);
+  }
+
+  if (parts.length === 0) return '';
+  return `<div class="record-location-summary" style="font-size:12px;color:var(--text-secondary);margin-bottom:var(--space-2);">${parts.join(' - ')}</div>`;
+}
+
 // Renderizar histórico
 async function renderHistory() {
   const allRecords = await getAllRecords();
@@ -145,6 +167,7 @@ async function renderHistory() {
           <div class="record-coords" onclick="event.stopPropagation(); copyToClipboard('${formatCoords(r.lat, r.lng)}')" style="cursor:pointer;" title="Clique para copiar">
             ${formatCoords(r.lat, r.lng)}
           </div>
+          ${formatRecordLocationSummary(r)}
           ${r.notes ? `<div class="record-notes">${r.notes}</div>` : ''}
           ${renderRecordTags(r.tags)}
           <div class="btn-group" style="margin-top:12px;gap:8px;">
@@ -165,6 +188,9 @@ async function copyRecordData(id) {
   let text = `📍 Coordenadas: ${formatCoords(record.lat, record.lng)}`;
   if (record.accuracy) {
     text += ` (precisão: ~${Math.round(record.accuracy)}m)`;
+  }
+  if (record.locationInfo) {
+    text += '\n' + formatLocationInfo(record.locationInfo);
   }
   if (record.notes) {
     text += `\n📝 Observações: ${record.notes}`;
@@ -202,6 +228,9 @@ async function shareRecord(id) {
   let text = `📍 Coordenadas: ${formatCoords(record.lat, record.lng)}`;
   if (record.accuracy) {
     text += ` (precisão: ~${Math.round(record.accuracy)}m)`;
+  }
+  if (record.locationInfo) {
+    text += '\n' + formatLocationInfo(record.locationInfo);
   }
   if (record.notes) {
     text += `\n📝 Observações: ${record.notes}`;
@@ -323,6 +352,9 @@ async function shareSelectedRecords() {
       combinedText += ` (~${Math.round(record.accuracy)}m)`;
     }
     combinedText += '\n';
+    if (record.locationInfo) {
+      combinedText += '   ' + formatLocationInfo(record.locationInfo).replace(/\n/g, '\n   ') + '\n';
+    }
     if (record.notes) {
       combinedText += `   📝 ${record.notes}\n`;
     }
@@ -437,6 +469,66 @@ async function saveEdit() {
   editingTags = [];
 }
 
+// Renderizar locationInfo no modal de detalhes
+function renderModalLocationInfo(locationInfo) {
+  if (!locationInfo) return '';
+  let html = '<div class="location-info-container" style="margin-top:12px;">';
+
+  if (locationInfo.address?.fullAddress) {
+    html += `<div class="location-info-item">
+      <div class="location-info-label">ENDEREÇO</div>
+      <div class="location-info-value">${locationInfo.address.fullAddress}</div>
+    </div>`;
+  }
+
+  if (locationInfo.highway?.highway) {
+    let hwText = locationInfo.highway.highway;
+    if (locationInfo.highway.milestone?.km) {
+      hwText += ` - KM ${locationInfo.highway.milestone.km}`;
+    }
+    html += `<div class="location-info-item">
+      <div class="location-info-label">RODOVIA</div>
+      <div class="location-info-value">🛣️ ${hwText}</div>
+    </div>`;
+  }
+
+  if (locationInfo.pois?.length > 0) {
+    html += `<div class="location-info-item">
+      <div class="location-info-label">REFERÊNCIAS PRÓXIMAS</div>
+      ${locationInfo.pois.map(p => `<div class="location-info-poi">${p.icon} ${p.name} (${p.distance}m)</div>`).join('')}
+    </div>`;
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// Buscar endereço para registro antigo que não tem locationInfo
+async function fetchLocationInfoForRecord(id) {
+  const container = document.getElementById('modalLocationInfo');
+  if (!container) return;
+
+  container.innerHTML = '<div style="margin-top:12px;"><span class="location-info-loading">Buscando endereço e referências...</span></div>';
+
+  try {
+    const record = await getRecord(id);
+    const info = await getLocationInfo(record.lat, record.lng);
+
+    // Salvar no registro
+    await updateRecord(id, { locationInfo: info });
+
+    // Renderizar no modal
+    container.innerHTML = renderModalLocationInfo(info) ||
+      '<div style="margin-top:12px;"><span class="location-info-empty">Nenhuma informação encontrada</span></div>';
+
+    showToast('Endereço encontrado e salvo!');
+    // Atualizar lista
+    renderHistory();
+  } catch (err) {
+    container.innerHTML = '<div style="margin-top:12px;"><span class="location-info-empty">Não foi possível obter endereço (sem internet?)</span></div>';
+  }
+}
+
 // Inicializar modal e eventos do histórico
 function initHistory() {
   // Filtros
@@ -515,6 +607,16 @@ function initHistory() {
     const tagsHtml = record.tags && record.tags.length > 0 ?
       `<div style="margin-top:12px;"><strong>Tags:</strong>${renderRecordTags(record.tags)}</div>` : '';
 
+    const locationInfoHtml = record.locationInfo ? renderModalLocationInfo(record.locationInfo) :
+      `<div style="margin-top:12px;">
+        <button class="btn btn-outline btn-small" onclick="fetchLocationInfoForRecord(${record.id})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Buscar endereço
+        </button>
+      </div>`;
+
     const content = `
       ${mediaHtml}
       <div class="coords-display" onclick="copyToClipboard('${formatCoords(record.lat, record.lng)}')" style="cursor:pointer;">
@@ -522,6 +624,7 @@ function initHistory() {
         ${formatCoords(record.lat, record.lng)}
         ${accuracyHtml}
       </div>
+      <div id="modalLocationInfo">${locationInfoHtml}</div>
       ${record.notes ? `<div style="margin-top:12px;"><strong>Observações:</strong><p style="margin-top:4px;white-space:pre-wrap;">${record.notes}</p></div>` : ''}
       ${tagsHtml}
       <div style="margin-top:12px;">
