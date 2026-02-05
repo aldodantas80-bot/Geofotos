@@ -123,7 +123,7 @@ async function findHighwayInfo(lat, lng) {
 // Busca POIs com tags ampliadas: amenity, shop, tourism, historic, man_made, leisure, bridge, artwork
 async function findNearbyPOIsOverpass(lat, lng) {
   try {
-    const radius = 200; // metros - expandido para cobrir mais área
+    const radius = 300; // metros
     const query = `
       [out:json][timeout:15];
       (
@@ -198,7 +198,7 @@ async function findNearbyPOIsNominatim(lat, lng) {
     await waitRateLimit();
 
     // Criar viewbox de ~300m ao redor do ponto
-    const delta = 0.003; // ~300m em graus
+    const delta = 0.0027; // ~300m em graus
     const viewbox = `${lng - delta},${lat + delta},${lng + delta},${lat - delta}`;
 
     const response = await fetch(
@@ -224,7 +224,7 @@ async function findNearbyPOIsNominatim(lat, lng) {
           relevance: calculateRelevance(category, dist)
         };
       })
-      .filter(p => p.distance <= 500); // filtrar apenas os próximos
+      .filter(p => p.distance <= 300); // filtrar apenas os próximos
   } catch (err) {
     console.log('Erro Nominatim search:', err);
     return [];
@@ -235,7 +235,7 @@ async function findNearbyPOIsNominatim(lat, lng) {
 // Busca entidades com coordenadas próximas (monumentos, obras de arte, estruturas notáveis)
 async function findNearbyPOIsWikidata(lat, lng) {
   try {
-    const radiusKm = 0.5; // 500 metros
+    const radiusKm = 0.3; // 300 metros
 
     // Query SPARQL para buscar entidades geolocalizadas próximas
     const sparqlQuery = `
@@ -320,8 +320,8 @@ async function findNearbyPOIs(lat, lng) {
     // Ordenar por relevância (maior = mais relevante)
     uniquePOIs.sort((a, b) => b.relevance - a.relevance);
 
-    // Retornar os 8 mais relevantes
-    return uniquePOIs.slice(0, 8);
+    // Retornar os 3 mais relevantes
+    return uniquePOIs.slice(0, 3);
   } catch (err) {
     console.log('Erro ao buscar POIs:', err);
     return [];
