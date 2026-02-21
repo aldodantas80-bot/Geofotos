@@ -354,9 +354,13 @@ async function fetchCaptureAddress(type) {
       renderLocationInfoPreview('locationLocationInfo', currentLocationInfo);
     }
   } catch (err) {
+    const errorMsg = err.message?.includes('Tempo esgotado')
+      ? 'Tempo esgotado ao buscar endereço. Tente novamente.'
+      : 'Não foi possível obter endereço. Verifique sua conexão.';
     if (locInfo) {
-      locInfo.innerHTML = '<span class="location-info-empty">Não foi possível obter endereço</span>';
+      locInfo.innerHTML = `<span class="location-info-empty">${errorMsg}</span>`;
     }
+    showToast(errorMsg);
   }
 
   btn.disabled = false;
@@ -407,12 +411,16 @@ async function fetchCaptureReferences(type) {
     }
 
     if (pois.length === 0) {
-      showToast('Nenhuma referência encontrada em 100m');
+      showToast('Nenhuma referência encontrada em 300m');
     }
   } catch (err) {
+    const errorMsg = err.message?.includes('Tempo esgotado')
+      ? 'Tempo esgotado ao buscar referências. Tente novamente.'
+      : 'Não foi possível buscar referências. Verifique sua conexão.';
     if (locInfo) {
-      locInfo.innerHTML = '<span class="location-info-empty">Não foi possível buscar referências</span>';
+      locInfo.innerHTML = `<span class="location-info-empty">${errorMsg}</span>`;
     }
+    showToast(errorMsg);
   }
 
   btn.disabled = false;
