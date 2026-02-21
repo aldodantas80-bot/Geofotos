@@ -13,23 +13,28 @@ async function waitRateLimit() {
 }
 
 // ========== Cache de geocodificação ==========
-// Evita chamadas redundantes para coordenadas próximas (dentro de ~50m)
+// Evita chamadas redundantes para coordenadas próximas
 const geoCache = {
   address: new Map(),
   highway: new Map(),
   pois: new Map(),
   maxAge: 10 * 60 * 1000, // 10 minutos
-  gridSize: 0.0005, // ~55m de resolução
+  // Grids diferentes por tipo: endereço precisa de precisão maior
+  gridSizes: {
+    address: 0.0001, // ~11m - preciso para números de endereço
+    highway: 0.001,  // ~110m - mesma rodovia numa faixa ampla
+    pois: 0.0005     // ~55m - referências próximas
+  },
 
-  _key(lat, lng) {
-    // Arredonda para grid para agrupar coordenadas próximas
-    const gridLat = Math.round(lat / this.gridSize) * this.gridSize;
-    const gridLng = Math.round(lng / this.gridSize) * this.gridSize;
-    return `${gridLat.toFixed(4)},${gridLng.toFixed(4)}`;
+  _key(type, lat, lng) {
+    const gridSize = this.gridSizes[type] || 0.0005;
+    const gridLat = Math.round(lat / gridSize) * gridSize;
+    const gridLng = Math.round(lng / gridSize) * gridSize;
+    return `${gridLat.toFixed(6)},${gridLng.toFixed(6)}`;
   },
 
   get(type, lat, lng) {
-    const key = this._key(lat, lng);
+    const key = this._key(type, lat, lng);
     const entry = this[type].get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > this.maxAge) {
@@ -40,9 +45,8 @@ const geoCache = {
   },
 
   set(type, lat, lng, data) {
-    const key = this._key(lat, lng);
+    const key = this._key(type, lat, lng);
     this[type].set(key, { data, timestamp: Date.now() });
-    // Limitar tamanho do cache (máx 100 entradas por tipo)
     if (this[type].size > 100) {
       const firstKey = this[type].keys().next().value;
       this[type].delete(firstKey);
@@ -162,22 +166,26 @@ async function reverseGeocode(lat, lng) {
 }
 
 // Buscar rodovia (federal e estadual) e KM aproximado via Overpass API
+// Usa geometria da rodovia + milestones em raio amplo para interpolação
 async function findHighwayInfo(lat, lng) {
-  // Verificar cache
   const cached = geoCache.get('highway', lat, lng);
   if (cached) return cached;
 
   try {
-    const radius = 200; // metros
-    // Buscar rodovias federais (BR-) e estaduais (XX- onde XX é sigla do estado)
-    const query = `
-      [out:json][timeout:10];
-      (
-        way["ref"~"^(BR|AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SE|SP|TO)-"](around:${radius},${lat},${lng});
-      );
-      out tags;
+    const searchRadius = 200;      // raio para identificar a rodovia
+    const geoRadius = 2000;        // raio para geometria da rodovia (interpolação)
+    const milestoneRadius = 5000;  // raio para marcos quilométricos
 
-      node["highway"="milestone"](around:1000,${lat},${lng});
+    // Query combinada: rodovias com geometria (2km) + milestones (5km)
+    const refPattern = '^(BR|AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SE|SP|TO)-';
+    const query = `
+      [out:json][timeout:20];
+      (
+        way["ref"~"${refPattern}"](around:${geoRadius},${lat},${lng});
+      );
+      out body geom;
+
+      node["highway"="milestone"](around:${milestoneRadius},${lat},${lng});
       out body;
     `;
 
@@ -185,48 +193,92 @@ async function findHighwayInfo(lat, lng) {
       method: 'POST',
       body: `data=${encodeURIComponent(query)}`,
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    }, { maxRetries: 1, timeoutMs: 12000 });
+    }, { maxRetries: 1, timeoutMs: 25000 });
 
     const data = await response.json();
 
-    let highway = null;
-    let highwayName = null;
-    let milestone = null;
-
-    // Buscar rodovia - priorizar federal (BR-) sobre estadual
-    const highways = [];
+    // Separar rodovias e milestones
+    const highwayWays = [];
+    const milestoneNodes = [];
     for (const el of data.elements) {
-      if (el.type === 'way' && el.tags?.ref) {
-        highways.push({
-          ref: el.tags.ref,
-          name: el.tags.name || null,
-          isFederal: el.tags.ref.startsWith('BR-')
-        });
+      if (el.type === 'way' && el.tags?.ref && el.geometry) {
+        highwayWays.push(el);
+      } else if (el.type === 'node' && el.tags?.highway === 'milestone') {
+        milestoneNodes.push(el);
       }
     }
-    // Ordenar: federais primeiro
-    highways.sort((a, b) => (b.isFederal ? 1 : 0) - (a.isFederal ? 1 : 0));
-    if (highways.length > 0) {
-      highway = highways[0].ref;
-      highwayName = highways[0].name;
+
+    if (highwayWays.length === 0) {
+      const result = { highway: null, highwayName: null, milestone: null };
+      geoCache.set('highway', lat, lng, result);
+      return result;
     }
 
-    // Buscar marco quilométrico mais próximo
+    // Encontrar a rodovia mais próxima do usuário
+    let closestRef = null;
+    let closestName = null;
     let closestDist = Infinity;
-    for (const el of data.elements) {
-      if (el.type === 'node' && el.tags?.highway === 'milestone') {
-        const dist = haversineDistance(lat, lng, el.lat, el.lon);
-        if (dist < closestDist) {
+    let isFederalClosest = false;
+
+    for (const way of highwayWays) {
+      for (const pt of way.geometry) {
+        const dist = haversineDistance(lat, lng, pt.lat, pt.lon);
+        const isFederal = way.tags.ref.startsWith('BR-');
+        // Priorizar federal se a distância é similar (dentro de 50m)
+        if (dist < closestDist || (dist < closestDist + 50 && isFederal && !isFederalClosest)) {
           closestDist = dist;
-          milestone = {
-            km: el.tags.distance || el.tags['pk'] || el.tags['ref'] || null,
-            distance: Math.round(dist)
-          };
+          closestRef = way.tags.ref;
+          closestName = way.tags.name || null;
+          isFederalClosest = isFederal;
         }
       }
     }
 
-    const result = { highway, highwayName, milestone };
+    // Só considerar rodovias dentro do raio de busca
+    if (closestDist > searchRadius) {
+      const result = { highway: null, highwayName: null, milestone: null };
+      geoCache.set('highway', lat, lng, result);
+      return result;
+    }
+
+    // Filtrar segmentos da rodovia encontrada e encadear geometria
+    const matchingWays = highwayWays.filter(w => w.tags.ref === closestRef);
+    const polyline = chainWaySegments(matchingWays.map(w => w.geometry));
+
+    // Extrair milestones com valor de km
+    const milestones = milestoneNodes
+      .map(node => {
+        const km = extractMilestoneKm(node.tags);
+        if (km === null) return null;
+        return { lat: node.lat, lon: node.lon, km };
+      })
+      .filter(Boolean);
+
+    // Tentar interpolação geométrica
+    let milestone = null;
+    if (polyline.length >= 2 && milestones.length > 0) {
+      milestone = estimateKmByInterpolation(lat, lng, polyline, milestones);
+    } else if (milestones.length > 0) {
+      // Fallback: milestone mais próximo (sem interpolação)
+      let nearest = null;
+      let nearestDist = Infinity;
+      for (const ms of milestones) {
+        const dist = haversineDistance(lat, lng, ms.lat, ms.lon);
+        if (dist < nearestDist) {
+          nearestDist = dist;
+          nearest = ms;
+        }
+      }
+      if (nearest) {
+        milestone = {
+          km: nearest.km,
+          distance: Math.round(nearestDist),
+          estimated: false
+        };
+      }
+    }
+
+    const result = { highway: closestRef, highwayName: closestName, milestone };
     geoCache.set('highway', lat, lng, result);
     return result;
   } catch (err) {
@@ -604,6 +656,224 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+// ========== Interpolação geométrica de KM ==========
+
+// Extrair valor de km das tags de um milestone
+function extractMilestoneKm(tags) {
+  // Prioridade: distance > pk > ref numérico
+  const candidates = [
+    tags.distance,
+    tags.pk,
+    tags['distance:ref'],
+    tags['addr:milestone']
+  ];
+  for (const val of candidates) {
+    if (!val) continue;
+    const num = parseFloat(val);
+    if (!isNaN(num) && num >= 0 && num < 2000) return num;
+  }
+  // ref pode ser km OU nome da rodovia - só usar se for puramente numérico
+  if (tags.ref && /^\d+(\.\d+)?$/.test(tags.ref.trim())) {
+    const num = parseFloat(tags.ref);
+    if (!isNaN(num) && num >= 0) return num;
+  }
+  return null;
+}
+
+// Projetar ponto P sobre o segmento de reta AB
+// Retorna fração [0,1] ao longo do segmento e distância perpendicular
+function projectPointOnSegment(pLat, pLng, aLat, aLng, bLat, bLng) {
+  // Coordenadas cartesianas locais (correção de longitude pela latitude)
+  const cosLat = Math.cos(pLat * Math.PI / 180);
+  const ax = (aLng - pLng) * cosLat;
+  const ay = aLat - pLat;
+  const bx = (bLng - pLng) * cosLat;
+  const by = bLat - pLat;
+
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+
+  if (lenSq === 0) {
+    return { fraction: 0, distance: haversineDistance(pLat, pLng, aLat, aLng) };
+  }
+
+  // Projeção do ponto P (na origem local) sobre o segmento
+  let t = ((-ax) * dx + (-ay) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+
+  const projLat = aLat + t * (bLat - aLat);
+  const projLng = aLng + t * (bLng - aLng);
+
+  return {
+    fraction: t,
+    distance: haversineDistance(pLat, pLng, projLat, projLng)
+  };
+}
+
+// Projetar ponto sobre uma polilinha (sequência de pontos)
+// Retorna distância ao longo da linha e distância perpendicular
+function projectPointOnPolyline(pLat, pLng, polyline) {
+  let minDist = Infinity;
+  let bestSegment = 0;
+  let bestFraction = 0;
+
+  for (let i = 0; i < polyline.length - 1; i++) {
+    const proj = projectPointOnSegment(
+      pLat, pLng,
+      polyline[i].lat, polyline[i].lon,
+      polyline[i + 1].lat, polyline[i + 1].lon
+    );
+    if (proj.distance < minDist) {
+      minDist = proj.distance;
+      bestSegment = i;
+      bestFraction = proj.fraction;
+    }
+  }
+
+  // Distância acumulada ao longo da polilinha até o ponto de projeção
+  let distAlong = 0;
+  for (let i = 0; i < bestSegment; i++) {
+    distAlong += haversineDistance(
+      polyline[i].lat, polyline[i].lon,
+      polyline[i + 1].lat, polyline[i + 1].lon
+    );
+  }
+  const segLen = haversineDistance(
+    polyline[bestSegment].lat, polyline[bestSegment].lon,
+    polyline[bestSegment + 1].lat, polyline[bestSegment + 1].lon
+  );
+  distAlong += bestFraction * segLen;
+
+  return { distAlong, distFromLine: minDist };
+}
+
+// Encadear segmentos de rodovia em uma polilinha contínua
+function chainWaySegments(geometries) {
+  if (geometries.length === 0) return [];
+  if (geometries.length === 1) return geometries[0];
+
+  const segments = geometries.map((g, i) => ({ id: i, points: g }));
+  const used = new Set([0]);
+  let chain = [...segments[0].points];
+
+  const THRESHOLD = 0.00015; // ~15m para considerar endpoints conectados
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let i = 0; i < segments.length; i++) {
+      if (used.has(i)) continue;
+
+      const seg = segments[i];
+      const segStart = seg.points[0];
+      const segEnd = seg.points[seg.points.length - 1];
+      const chainStart = chain[0];
+      const chainEnd = chain[chain.length - 1];
+
+      if (coordsClose(chainEnd, segStart, THRESHOLD)) {
+        chain.push(...seg.points.slice(1));
+        used.add(i); changed = true;
+      } else if (coordsClose(chainEnd, segEnd, THRESHOLD)) {
+        chain.push(...[...seg.points].reverse().slice(1));
+        used.add(i); changed = true;
+      } else if (coordsClose(chainStart, segEnd, THRESHOLD)) {
+        chain.unshift(...seg.points.slice(0, -1));
+        used.add(i); changed = true;
+      } else if (coordsClose(chainStart, segStart, THRESHOLD)) {
+        chain.unshift(...[...seg.points].reverse().slice(0, -1));
+        used.add(i); changed = true;
+      }
+    }
+  }
+  return chain;
+}
+
+function coordsClose(p1, p2, threshold) {
+  return Math.abs(p1.lat - p2.lat) < threshold &&
+         Math.abs(p1.lon - p2.lon) < threshold;
+}
+
+// Estimar KM por interpolação geométrica
+// Projeta o usuário e os milestones na polilinha da rodovia e interpola
+function estimateKmByInterpolation(userLat, userLng, polyline, milestones) {
+  const userProj = projectPointOnPolyline(userLat, userLng, polyline);
+
+  // Projetar milestones na polilinha (rejeitar os que estão longe da rodovia)
+  const projectedMs = milestones
+    .map(ms => {
+      const proj = projectPointOnPolyline(ms.lat, ms.lon, polyline);
+      if (proj.distFromLine > 200) return null; // muito longe da rodovia
+      return { km: ms.km, distAlong: proj.distAlong, distFromLine: proj.distFromLine };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.distAlong - b.distAlong);
+
+  if (projectedMs.length === 0) {
+    // Nenhum milestone perto da rodovia - usar o mais próximo por distância direta
+    let nearest = null;
+    let nearestDist = Infinity;
+    for (const ms of milestones) {
+      const dist = haversineDistance(userLat, userLng, ms.lat, ms.lon);
+      if (dist < nearestDist) { nearestDist = dist; nearest = ms; }
+    }
+    if (nearest && nearestDist < 5000) {
+      return { km: nearest.km, distance: Math.round(nearestDist), estimated: true, method: 'nearest' };
+    }
+    return null;
+  }
+
+  const userDist = userProj.distAlong;
+
+  // Encontrar milestones que "envolvem" a posição do usuário
+  let before = null, after = null;
+  for (const ms of projectedMs) {
+    if (ms.distAlong <= userDist) before = ms;
+    else if (!after) after = ms;
+  }
+
+  // Caso ideal: interpolação entre dois milestones
+  if (before && after) {
+    const range = after.distAlong - before.distAlong;
+    if (range > 0) {
+      const fraction = (userDist - before.distAlong) / range;
+      const km = before.km + fraction * (after.km - before.km);
+      return {
+        km: Math.round(km * 10) / 10,
+        estimated: true,
+        method: 'interpolation',
+        distance: Math.round(userProj.distFromLine)
+      };
+    }
+  }
+
+  // Extrapolação a partir de milestone(s) conhecidos
+  const ref = before || after;
+  if (ref) {
+    const distDiff = (userDist - ref.distAlong) / 1000; // metros → km
+
+    // Determinar direção do km (crescente ou decrescente ao longo da polilinha)
+    let kmDirection = 1;
+    if (projectedMs.length >= 2) {
+      const first = projectedMs[0];
+      const last = projectedMs[projectedMs.length - 1];
+      const dDist = last.distAlong - first.distAlong;
+      const dKm = last.km - first.km;
+      if (Math.abs(dDist) > 10) kmDirection = dKm > 0 ? 1 : -1;
+    }
+
+    const km = ref.km + distDiff * kmDirection;
+    return {
+      km: Math.round(Math.abs(km) * 10) / 10,
+      estimated: true,
+      method: 'extrapolation',
+      distance: Math.round(userProj.distFromLine)
+    };
+  }
+
+  return null;
+}
+
 // Ícone baseado no tipo e categoria do POI
 function getPOIIcon(type, category) {
   // Ícones por tipo específico
@@ -719,10 +989,14 @@ function formatLocationInfo(locationInfo) {
     if (locationInfo.highway.highwayName) {
       hwText += ` (${locationInfo.highway.highwayName})`;
     }
-    if (locationInfo.highway.milestone?.km) {
-      hwText += ` - KM ${locationInfo.highway.milestone.km}`;
-      if (locationInfo.highway.milestone.distance > 50) {
-        hwText += ` (aprox. ~${locationInfo.highway.milestone.distance}m do marco)`;
+    if (locationInfo.highway.milestone?.km != null) {
+      if (locationInfo.highway.milestone.estimated) {
+        hwText += ` - ~KM ${locationInfo.highway.milestone.km} (estimado)`;
+      } else {
+        hwText += ` - KM ${locationInfo.highway.milestone.km}`;
+        if (locationInfo.highway.milestone.distance > 50) {
+          hwText += ` (~${locationInfo.highway.milestone.distance}m do marco)`;
+        }
       }
     }
     text += hwText + '\n';
@@ -763,8 +1037,12 @@ function renderLocationInfoPreview(containerId, info) {
     if (info.highway.highwayName) {
       hwText += ` (${info.highway.highwayName})`;
     }
-    if (info.highway.milestone?.km) {
-      hwText += ` - KM ${info.highway.milestone.km}`;
+    if (info.highway.milestone?.km != null) {
+      if (info.highway.milestone.estimated) {
+        hwText += ` - ~KM ${info.highway.milestone.km} (estimado)`;
+      } else {
+        hwText += ` - KM ${info.highway.milestone.km}`;
+      }
     }
     html += `<div class="location-info-item">
       <div class="location-info-label">RODOVIA</div>
