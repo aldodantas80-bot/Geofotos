@@ -12,15 +12,98 @@ async function waitRateLimit() {
   lastGeoRequest = Date.now();
 }
 
+// ========== Cache de geocodificação ==========
+// Evita chamadas redundantes para coordenadas próximas (dentro de ~50m)
+const geoCache = {
+  address: new Map(),
+  highway: new Map(),
+  pois: new Map(),
+  maxAge: 10 * 60 * 1000, // 10 minutos
+  gridSize: 0.0005, // ~55m de resolução
+
+  _key(lat, lng) {
+    // Arredonda para grid para agrupar coordenadas próximas
+    const gridLat = Math.round(lat / this.gridSize) * this.gridSize;
+    const gridLng = Math.round(lng / this.gridSize) * this.gridSize;
+    return `${gridLat.toFixed(4)},${gridLng.toFixed(4)}`;
+  },
+
+  get(type, lat, lng) {
+    const key = this._key(lat, lng);
+    const entry = this[type].get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.timestamp > this.maxAge) {
+      this[type].delete(key);
+      return null;
+    }
+    return entry.data;
+  },
+
+  set(type, lat, lng, data) {
+    const key = this._key(lat, lng);
+    this[type].set(key, { data, timestamp: Date.now() });
+    // Limitar tamanho do cache (máx 100 entradas por tipo)
+    if (this[type].size > 100) {
+      const firstKey = this[type].keys().next().value;
+      this[type].delete(firstKey);
+    }
+  }
+};
+
+// ========== Fetch com timeout ==========
+async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+// ========== Retry com backoff exponencial ==========
+async function fetchWithRetry(url, options = {}, { maxRetries = 2, timeoutMs = 15000 } = {}) {
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetchWithTimeout(url, options, timeoutMs);
+      if (response.ok) return response;
+      // Não fazer retry para erros 4xx (erro do cliente)
+      if (response.status >= 400 && response.status < 500) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      lastError = new Error(`HTTP ${response.status}`);
+    } catch (err) {
+      lastError = err;
+      if (err.name === 'AbortError') {
+        lastError = new Error('Tempo esgotado na requisição');
+      }
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
 // Geocodificação reversa - retorna endereço simplificado
 async function reverseGeocode(lat, lng) {
+  // Verificar cache
+  const cached = geoCache.get('address', lat, lng);
+  if (cached) return cached;
+
   try {
     await waitRateLimit();
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=pt-BR`,
-      { headers: { 'User-Agent': 'GeoFotos-App/1.0' } }
+      { headers: { 'User-Agent': 'GeoFotos-App/1.0' } },
+      { maxRetries: 2, timeoutMs: 10000 }
     );
-    if (!response.ok) throw new Error('Erro na requisição');
     const data = await response.json();
 
     const road = data.address?.road || null;
@@ -29,6 +112,8 @@ async function reverseGeocode(lat, lng) {
     const city = data.address?.city || data.address?.town || data.address?.village || null;
     const state = data.address?.state || null;
     const postcode = data.address?.postcode || null;
+    const hamlet = data.address?.hamlet || null;
+    const county = data.address?.county || null;
 
     // Montar endereço simplificado: Rua, Número, Bairro, CEP, Cidade/Estado
     const parts = [];
@@ -38,15 +123,23 @@ async function reverseGeocode(lat, lng) {
       parts.push(roadPart);
     }
     if (neighbourhood) parts.push(neighbourhood);
+    // Em áreas rurais sem bairro, usar hamlet ou county como referência
+    if (!neighbourhood && !road) {
+      if (hamlet) parts.push(hamlet);
+      if (county) parts.push(county);
+    }
     if (postcode) parts.push(postcode);
     if (city) {
       let cityState = city;
       if (state) cityState += `/${state}`;
       parts.push(cityState);
+    } else if (state) {
+      // Área rural sem cidade - mostrar pelo menos o estado
+      parts.push(state);
     }
     const formattedAddress = parts.join(', ') || data.display_name || null;
 
-    return {
+    const result = {
       formattedAddress,
       fullAddress: data.display_name || null,
       road,
@@ -54,22 +147,33 @@ async function reverseGeocode(lat, lng) {
       neighbourhood,
       city,
       state,
-      postcode
+      postcode,
+      hamlet,
+      county
     };
+
+    // Salvar no cache
+    geoCache.set('address', lat, lng, result);
+    return result;
   } catch (err) {
     console.log('Erro geocodificação:', err);
     return null;
   }
 }
 
-// Buscar rodovia federal e KM aproximado via Overpass API (OpenStreetMap)
+// Buscar rodovia (federal e estadual) e KM aproximado via Overpass API
 async function findHighwayInfo(lat, lng) {
+  // Verificar cache
+  const cached = geoCache.get('highway', lat, lng);
+  if (cached) return cached;
+
   try {
     const radius = 200; // metros
+    // Buscar rodovias federais (BR-) e estaduais (XX- onde XX é sigla do estado)
     const query = `
       [out:json][timeout:10];
       (
-        way["ref"~"^BR-"](around:${radius},${lat},${lng});
+        way["ref"~"^(BR|AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SE|SP|TO)-"](around:${radius},${lat},${lng});
       );
       out tags;
 
@@ -77,24 +181,34 @@ async function findHighwayInfo(lat, lng) {
       out body;
     `;
 
-    const response = await fetch('https://overpass-api.de/api/interpreter', {
+    const response = await fetchWithRetry('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       body: `data=${encodeURIComponent(query)}`,
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
+    }, { maxRetries: 1, timeoutMs: 12000 });
 
-    if (!response.ok) throw new Error('Erro Overpass');
     const data = await response.json();
 
     let highway = null;
+    let highwayName = null;
     let milestone = null;
 
-    // Buscar rodovia federal
+    // Buscar rodovia - priorizar federal (BR-) sobre estadual
+    const highways = [];
     for (const el of data.elements) {
       if (el.type === 'way' && el.tags?.ref) {
-        highway = el.tags.ref;
-        break;
+        highways.push({
+          ref: el.tags.ref,
+          name: el.tags.name || null,
+          isFederal: el.tags.ref.startsWith('BR-')
+        });
       }
+    }
+    // Ordenar: federais primeiro
+    highways.sort((a, b) => (b.isFederal ? 1 : 0) - (a.isFederal ? 1 : 0));
+    if (highways.length > 0) {
+      highway = highways[0].ref;
+      highwayName = highways[0].name;
     }
 
     // Buscar marco quilométrico mais próximo
@@ -112,15 +226,17 @@ async function findHighwayInfo(lat, lng) {
       }
     }
 
-    return { highway, milestone };
+    const result = { highway, highwayName, milestone };
+    geoCache.set('highway', lat, lng, result);
+    return result;
   } catch (err) {
     console.log('Erro ao buscar rodovia:', err);
-    return { highway: null, milestone: null };
+    return { highway: null, highwayName: null, milestone: null };
   }
 }
 
 // ========== CAMADA 1: Overpass API expandida ==========
-// Busca POIs com tags ampliadas: amenity, shop, tourism, historic, man_made, leisure, bridge, artwork
+// Busca POIs com tags ampliadas incluindo features naturais
 async function findNearbyPOIsOverpass(lat, lng) {
   try {
     const radius = 300; // metros
@@ -153,17 +269,23 @@ async function findNearbyPOIsOverpass(lat, lng) {
 
         // Lugares nomeados
         nwr["place"]["name"](around:${radius},${lat},${lng});
+
+        // Features naturais (rios, riachos, morros, serras, lagoas)
+        nwr["natural"]["name"](around:${radius},${lat},${lng});
+        nwr["waterway"]["name"](around:${radius},${lat},${lng});
+
+        // Junções e cruzamentos nomeados
+        nwr["junction"]["name"](around:${radius},${lat},${lng});
       );
       out center tags;
     `;
 
-    const response = await fetch('https://overpass-api.de/api/interpreter', {
+    const response = await fetchWithRetry('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       body: `data=${encodeURIComponent(query)}`,
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
+    }, { maxRetries: 1, timeoutMs: 18000 });
 
-    if (!response.ok) throw new Error('Erro Overpass');
     const data = await response.json();
 
     return data.elements
@@ -201,12 +323,11 @@ async function findNearbyPOIsNominatim(lat, lng) {
     const delta = 0.0027; // ~300m em graus
     const viewbox = `${lng - delta},${lat + delta},${lng + delta},${lat - delta}`;
 
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `https://nominatim.openstreetmap.org/search?format=json&viewbox=${viewbox}&bounded=1&limit=20&accept-language=pt-BR&addressdetails=1`,
-      { headers: { 'User-Agent': 'GeoFotos-App/1.0' } }
+      { headers: { 'User-Agent': 'GeoFotos-App/1.0' } },
+      { maxRetries: 1, timeoutMs: 10000 }
     );
-
-    if (!response.ok) throw new Error('Erro Nominatim search');
     const data = await response.json();
 
     return data
@@ -255,7 +376,7 @@ async function findNearbyPOIsWikidata(lat, lng) {
     `;
 
     const url = 'https://query.wikidata.org/sparql';
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -263,9 +384,7 @@ async function findNearbyPOIsWikidata(lat, lng) {
         'User-Agent': 'GeoFotos-App/1.0'
       },
       body: `query=${encodeURIComponent(sparqlQuery)}`
-    });
-
-    if (!response.ok) throw new Error('Erro Wikidata SPARQL');
+    }, { maxRetries: 1, timeoutMs: 12000 });
     const data = await response.json();
 
     // Agrupar por item (pode ter múltiplos instanceof)
@@ -303,16 +422,28 @@ async function findNearbyPOIsWikidata(lat, lng) {
 
 // ========== Função híbrida: combina as 3 camadas ==========
 async function findNearbyPOIs(lat, lng) {
+  // Verificar cache
+  const cached = geoCache.get('pois', lat, lng);
+  if (cached) return cached;
+
   try {
-    // Executar as 3 camadas em paralelo
-    const [overpassPOIs, nominatimPOIs, wikidataPOIs] = await Promise.all([
+    // Executar as 3 camadas em paralelo com tolerância a falhas
+    const results = await Promise.allSettled([
       findNearbyPOIsOverpass(lat, lng),
       findNearbyPOIsNominatim(lat, lng),
       findNearbyPOIsWikidata(lat, lng)
     ]);
 
-    // Combinar todos os resultados
-    const allPOIs = [...overpassPOIs, ...nominatimPOIs, ...wikidataPOIs];
+    // Combinar resultados bem-sucedidos (ignorar camadas que falharam)
+    const allPOIs = [];
+    const sources = ['Overpass', 'Nominatim', 'Wikidata'];
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') {
+        allPOIs.push(...result.value);
+      } else {
+        console.log(`Camada ${sources[i]} falhou:`, result.reason?.message);
+      }
+    });
 
     // Deduplicar por nome similar e proximidade
     const uniquePOIs = deduplicatePOIs(allPOIs);
@@ -321,7 +452,11 @@ async function findNearbyPOIs(lat, lng) {
     uniquePOIs.sort((a, b) => b.relevance - a.relevance);
 
     // Retornar os 3 mais relevantes
-    return uniquePOIs.slice(0, 3);
+    const topPOIs = uniquePOIs.slice(0, 3);
+
+    // Salvar no cache
+    geoCache.set('pois', lat, lng, topPOIs);
+    return topPOIs;
   } catch (err) {
     console.log('Erro ao buscar POIs:', err);
     return [];
@@ -338,6 +473,9 @@ function extractPOIType(tags) {
   if (tags.tourism) return { type: tags.tourism, category: 'tourism' };
   if (tags.man_made) return { type: tags.man_made, category: 'structure' };
   if (tags.bridge) return { type: 'bridge', category: 'structure' };
+  if (tags.natural) return { type: tags.natural, category: 'natural' };
+  if (tags.waterway) return { type: tags.waterway, category: 'natural' };
+  if (tags.junction) return { type: 'junction', category: 'structure' };
   if (tags.leisure) return { type: tags.leisure, category: 'leisure' };
   if (tags.amenity) return { type: tags.amenity, category: 'amenity' };
   if (tags.shop) return { type: tags.shop, category: 'shop' };
@@ -357,7 +495,10 @@ function mapNominatimClass(osmClass, osmType) {
     'man_made': 'structure',
     'building': 'building',
     'place': 'place',
-    'highway': 'structure'
+    'highway': 'structure',
+    'natural': 'natural',
+    'waterway': 'natural',
+    'junction': 'structure'
   };
   return classMap[osmClass] || 'other';
 }
@@ -380,11 +521,12 @@ function calculateRelevance(category, distance, isCultural = false) {
   // Base: quanto mais perto, maior a relevância (até 100 pontos por proximidade)
   const proximityScore = Math.max(0, 100 - (distance / 5));
 
-  // Bonus por categoria (landmarks culturais são mais interessantes como referência)
+  // Bonus por categoria (landmarks culturais e naturais são mais interessantes como referência)
   const categoryBonus = {
     'historic': 50,
     'artwork': 50,
     'structure': 40,  // viadutos, pontes
+    'natural': 35,    // rios, morros, serras
     'tourism': 35,
     'religious': 30,
     'landmark': 45,
@@ -494,7 +636,18 @@ function getPOIIcon(type, category) {
     'stadium': '🏟️', 'swimming_pool': '🏊', 'beach': '🏖️',
 
     // Lugares
-    'square': '🏛️', 'neighbourhood': '🏘️', 'suburb': '🏘️'
+    'square': '🏛️', 'neighbourhood': '🏘️', 'suburb': '🏘️',
+
+    // Features naturais
+    'river': '🏞️', 'stream': '🏞️', 'creek': '🏞️', 'canal': '🏞️',
+    'lake': '🏞️', 'pond': '🏞️', 'reservoir': '🏞️',
+    'peak': '⛰️', 'hill': '⛰️', 'mountain': '⛰️', 'ridge': '⛰️',
+    'cliff': '🏔️', 'valley': '🏔️', 'cave_entrance': '🕳️',
+    'spring': '💧', 'waterfall': '💧', 'wetland': '🌿',
+    'wood': '🌲', 'tree': '🌳', 'rock': '🪨',
+
+    // Junções
+    'junction': '🔀'
   };
 
   // Ícones por categoria (fallback)
@@ -502,6 +655,7 @@ function getPOIIcon(type, category) {
     'historic': '🏛️',
     'artwork': '🎨',
     'structure': '🌉',
+    'natural': '🏞️',
     'tourism': '📍',
     'religious': '⛪',
     'leisure': '🌳',
@@ -562,6 +716,9 @@ function formatLocationInfo(locationInfo) {
 
   if (locationInfo?.highway?.highway) {
     let hwText = `🛣️ Rodovia: ${locationInfo.highway.highway}`;
+    if (locationInfo.highway.highwayName) {
+      hwText += ` (${locationInfo.highway.highwayName})`;
+    }
     if (locationInfo.highway.milestone?.km) {
       hwText += ` - KM ${locationInfo.highway.milestone.km}`;
       if (locationInfo.highway.milestone.distance > 50) {
@@ -603,6 +760,9 @@ function renderLocationInfoPreview(containerId, info) {
 
   if (info.highway?.highway) {
     let hwText = info.highway.highway;
+    if (info.highway.highwayName) {
+      hwText += ` (${info.highway.highwayName})`;
+    }
     if (info.highway.milestone?.km) {
       hwText += ` - KM ${info.highway.milestone.km}`;
     }
