@@ -1,5 +1,69 @@
 // ========== Geocodificação Reversa e Referências ==========
 
+// ========== Dados locais de KM (BR-101 e BR-235 em Sergipe) ==========
+let highwayKmData = null; // carregado sob demanda
+
+async function loadHighwayKmData() {
+  if (highwayKmData) return highwayKmData;
+  try {
+    const response = await fetch('data/highway-km.json');
+    highwayKmData = await response.json();
+    console.log('Dados de KM carregados:', Object.keys(highwayKmData).map(k => `${k}: ${highwayKmData[k].length} marcos`).join(', '));
+    return highwayKmData;
+  } catch (err) {
+    console.log('Erro ao carregar dados de KM:', err);
+    return null;
+  }
+}
+
+// Buscar KM usando dados locais (sem API) — interpolação entre marcos inteiros
+function findLocalKm(lat, lng, highwayRef) {
+  if (!highwayKmData || !highwayKmData[highwayRef]) return null;
+
+  const marcos = highwayKmData[highwayRef];
+  let nearest1 = null, nearest2 = null;
+  let dist1 = Infinity, dist2 = Infinity;
+
+  // Encontrar os 2 marcos mais próximos
+  for (const m of marcos) {
+    const d = haversineDistance(lat, lng, m.lat, m.lng);
+    if (d < dist1) {
+      nearest2 = nearest1; dist2 = dist1;
+      nearest1 = m; dist1 = d;
+    } else if (d < dist2) {
+      nearest2 = m; dist2 = d;
+    }
+  }
+
+  if (!nearest1) return null;
+
+  // Se só tem 1 marco próximo ou está muito longe (>2km), retornar o mais próximo
+  if (!nearest2 || dist1 > 2000) {
+    return {
+      km: nearest1.km,
+      distance: Math.round(dist1),
+      estimated: false,
+      method: 'local-nearest',
+      source: 'local'
+    };
+  }
+
+  // Interpolar entre os 2 marcos mais próximos
+  // Fração baseada na distância relativa aos 2 marcos
+  const totalDist = dist1 + dist2;
+  const fraction = dist1 / totalDist; // 0 = no marco1, 1 = no marco2
+  const kmDiff = nearest2.km - nearest1.km;
+  const kmEstimado = nearest1.km + fraction * kmDiff;
+
+  return {
+    km: Math.round(kmEstimado * 10) / 10,
+    distance: Math.round(dist1),
+    estimated: true,
+    method: 'local-interpolation',
+    source: 'local'
+  };
+}
+
 // Controle de rate limit (Nominatim exige máximo 1 req/segundo)
 let lastGeoRequest = 0;
 
@@ -165,11 +229,14 @@ async function reverseGeocode(lat, lng) {
   }
 }
 
-// Buscar rodovia (federal e estadual) e KM aproximado via Overpass API
-// Usa geometria da rodovia + milestones em raio amplo para interpolação
+// Buscar rodovia (federal e estadual) e KM aproximado
+// Usa dados locais (BR-101/BR-235) quando disponíveis, senão Overpass API
 async function findHighwayInfo(lat, lng) {
   const cached = geoCache.get('highway', lat, lng);
   if (cached) return cached;
+
+  // Carregar dados locais de KM (lazy load, sem bloquear)
+  await loadHighwayKmData();
 
   try {
     const searchRadius = 200;      // raio para identificar a rodovia
@@ -241,40 +308,45 @@ async function findHighwayInfo(lat, lng) {
       return result;
     }
 
-    // Filtrar segmentos da rodovia encontrada e encadear geometria
-    const matchingWays = highwayWays.filter(w => w.tags.ref === closestRef);
-    const polyline = chainWaySegments(matchingWays.map(w => w.geometry));
+    // Tentar dados locais de KM primeiro (mais preciso, offline, instantâneo)
+    let milestone = findLocalKm(lat, lng, closestRef);
 
-    // Extrair milestones com valor de km
-    const milestones = milestoneNodes
-      .map(node => {
-        const km = extractMilestoneKm(node.tags);
-        if (km === null) return null;
-        return { lat: node.lat, lon: node.lon, km };
-      })
-      .filter(Boolean);
+    // Se não tem dados locais, usar milestones do Overpass
+    if (!milestone) {
+      // Filtrar segmentos da rodovia encontrada e encadear geometria
+      const matchingWays = highwayWays.filter(w => w.tags.ref === closestRef);
+      const polyline = chainWaySegments(matchingWays.map(w => w.geometry));
 
-    // Tentar interpolação geométrica
-    let milestone = null;
-    if (polyline.length >= 2 && milestones.length > 0) {
-      milestone = estimateKmByInterpolation(lat, lng, polyline, milestones);
-    } else if (milestones.length > 0) {
-      // Fallback: milestone mais próximo (sem interpolação)
-      let nearest = null;
-      let nearestDist = Infinity;
-      for (const ms of milestones) {
-        const dist = haversineDistance(lat, lng, ms.lat, ms.lon);
-        if (dist < nearestDist) {
-          nearestDist = dist;
-          nearest = ms;
+      // Extrair milestones com valor de km
+      const milestones = milestoneNodes
+        .map(node => {
+          const km = extractMilestoneKm(node.tags);
+          if (km === null) return null;
+          return { lat: node.lat, lon: node.lon, km };
+        })
+        .filter(Boolean);
+
+      // Tentar interpolação geométrica
+      if (polyline.length >= 2 && milestones.length > 0) {
+        milestone = estimateKmByInterpolation(lat, lng, polyline, milestones);
+      } else if (milestones.length > 0) {
+        // Fallback: milestone mais próximo (sem interpolação)
+        let nearest = null;
+        let nearestDist = Infinity;
+        for (const ms of milestones) {
+          const dist = haversineDistance(lat, lng, ms.lat, ms.lon);
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearest = ms;
+          }
         }
-      }
-      if (nearest) {
-        milestone = {
-          km: nearest.km,
-          distance: Math.round(nearestDist),
-          estimated: false
-        };
+        if (nearest) {
+          milestone = {
+            km: nearest.km,
+            distance: Math.round(nearestDist),
+            estimated: false
+          };
+        }
       }
     }
 
