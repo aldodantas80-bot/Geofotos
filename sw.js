@@ -1,4 +1,4 @@
-const CACHE_NAME = 'geofotos-v21';
+const CACHE_NAME = 'geofotos-v22';
 const BASE_PATH = '/Geofotos';
 const urlsToCache = [
   `${BASE_PATH}/`,
@@ -16,6 +16,7 @@ const urlsToCache = [
   `${BASE_PATH}/js/backup.js`,
   `${BASE_PATH}/js/map.js`,
   `${BASE_PATH}/js/app.js`,
+  `${BASE_PATH}/data/highway-km.json`,
   `${BASE_PATH}/sw.js`,
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
