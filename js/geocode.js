@@ -23,7 +23,7 @@ const geoCache = {
   gridSizes: {
     address: 0.0001, // ~11m - preciso para números de endereço
     highway: 0.001,  // ~110m - mesma rodovia numa faixa ampla
-    pois: 0.0005     // ~55m - referências próximas
+    pois: 0.0003     // ~33m - referências próximas (raio 100m)
   },
 
   _key(type, lat, lng) {
@@ -287,40 +287,25 @@ async function findHighwayInfo(lat, lng) {
   }
 }
 
-// ========== CAMADA 1: Overpass API expandida ==========
-// Busca POIs com tags ampliadas incluindo features naturais
+// ========== CAMADA 1: Overpass API (POIs de alta relevância) ==========
+// Busca apenas POIs que servem como referência real e reconhecível
 async function findNearbyPOIsOverpass(lat, lng) {
   try {
-    const radius = 300; // metros
+    const radius = 100; // metros — raio curto para só trazer referências realmente próximas
     const query = `
       [out:json][timeout:15];
       (
-        // Amenidades e comércio
-        nwr["amenity"]["name"](around:${radius},${lat},${lng});
-        nwr["shop"]["name"](around:${radius},${lat},${lng});
+        // Postos de combustível, hospitais, escolas, igrejas, delegacias, bombeiros
+        nwr["amenity"~"fuel|hospital|clinic|school|place_of_worship|police|fire_station|bus_station"]["name"](around:${radius},${lat},${lng});
 
-        // Turismo e histórico
-        nwr["tourism"](around:${radius},${lat},${lng});
-        nwr["historic"](around:${radius},${lat},${lng});
+        // Supermercados e grandes comércios
+        nwr["shop"~"supermarket|department_store|mall"]["name"](around:${radius},${lat},${lng});
 
-        // Estruturas construídas (pontes, viadutos, torres, etc)
+        // Estruturas construídas (pontes, viadutos, torres)
         nwr["man_made"]["name"](around:${radius},${lat},${lng});
         nwr["bridge"]["name"](around:${radius},${lat},${lng});
         way["bridge"="yes"]["name"](around:${radius},${lat},${lng});
         way["bridge"="viaduct"]["name"](around:${radius},${lat},${lng});
-
-        // Lazer (parques, praças)
-        nwr["leisure"]["name"](around:${radius},${lat},${lng});
-
-        // Obras de arte pública
-        nwr["tourism"="artwork"](around:${radius},${lat},${lng});
-        nwr["artwork_type"](around:${radius},${lat},${lng});
-
-        // Edifícios nomeados relevantes
-        nwr["building"]["name"]["building"!="yes"]["building"!="residential"]["building"!="apartments"]["building"!="house"](around:${radius},${lat},${lng});
-
-        // Lugares nomeados
-        nwr["place"]["name"](around:${radius},${lat},${lng});
 
         // Features naturais (rios, riachos, morros, serras, lagoas)
         nwr["natural"]["name"](around:${radius},${lat},${lng});
@@ -328,6 +313,9 @@ async function findNearbyPOIsOverpass(lat, lng) {
 
         // Junções e cruzamentos nomeados
         nwr["junction"]["name"](around:${radius},${lat},${lng});
+
+        // Histórico (monumentos, marcos)
+        nwr["historic"]["name"](around:${radius},${lat},${lng});
       );
       out center tags;
     `;
@@ -371,8 +359,8 @@ async function findNearbyPOIsNominatim(lat, lng) {
   try {
     await waitRateLimit();
 
-    // Criar viewbox de ~300m ao redor do ponto
-    const delta = 0.0027; // ~300m em graus
+    // Criar viewbox de ~100m ao redor do ponto
+    const delta = 0.0009; // ~100m em graus
     const viewbox = `${lng - delta},${lat + delta},${lng + delta},${lat - delta}`;
 
     const response = await fetchWithRetry(
@@ -397,7 +385,7 @@ async function findNearbyPOIsNominatim(lat, lng) {
           relevance: calculateRelevance(category, dist)
         };
       })
-      .filter(p => p.distance <= 300); // filtrar apenas os próximos
+      .filter(p => p.distance <= 100); // filtrar apenas os realmente próximos
   } catch (err) {
     console.log('Erro Nominatim search:', err);
     return [];
@@ -408,7 +396,7 @@ async function findNearbyPOIsNominatim(lat, lng) {
 // Busca entidades com coordenadas próximas (monumentos, obras de arte, estruturas notáveis)
 async function findNearbyPOIsWikidata(lat, lng) {
   try {
-    const radiusKm = 0.3; // 300 metros
+    const radiusKm = 0.1; // 100 metros
 
     // Query SPARQL para buscar entidades geolocalizadas próximas
     const sparqlQuery = `
