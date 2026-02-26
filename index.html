@@ -598,6 +598,29 @@
       </div>
     </div>
 
+    <div class="settings-section">
+      <div class="settings-card">
+        <div class="settings-icon" style="background: rgba(72, 199, 142, 0.15); color: var(--success);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <div class="settings-content">
+          <h3>HERE API (Referências)</h3>
+          <p>Chave gratuita para buscar pontos de referência comerciais (postos, mercados, etc). Obtenha em <a href="https://platform.here.com/sign-up" target="_blank" rel="noopener" style="color: var(--accent);">here.com</a>.</p>
+          <div class="settings-actions" style="flex-direction: column; gap: var(--space-2);">
+            <div style="display: flex; gap: var(--space-2); width: 100%;">
+              <input type="text" id="hereApiKeyInput" placeholder="Cole sua API Key aqui"
+                style="flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-tertiary); color: var(--text-primary); font-size: 0.85rem; font-family: monospace;">
+              <button class="btn btn-primary" id="saveHereApiKeyBtn" style="white-space: nowrap;">Salvar</button>
+            </div>
+            <div id="hereApiKeyStatus" style="font-size: 0.8rem; color: var(--text-muted);"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="settings-section danger">
       <div class="settings-card">
         <div class="settings-icon danger">
