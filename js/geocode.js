@@ -1,5 +1,21 @@
 // ========== Geocodificação Reversa e Referências ==========
 
+// ========== HERE API Key (armazenada no localStorage) ==========
+let hereApiKey = localStorage.getItem('hereApiKey') || '';
+
+function saveHereApiKey(key) {
+  hereApiKey = (key || '').trim();
+  if (hereApiKey) {
+    localStorage.setItem('hereApiKey', hereApiKey);
+  } else {
+    localStorage.removeItem('hereApiKey');
+  }
+}
+
+function getHereApiKey() {
+  return hereApiKey;
+}
+
 // ========== Dados locais de KM (BR-101 e BR-235 em Sergipe) ==========
 let highwayKmData = null; // carregado sob demanda
 
@@ -532,23 +548,106 @@ async function findNearbyPOIsWikidata(lat, lng) {
   }
 }
 
-// ========== Função híbrida: combina as 3 camadas ==========
+// ========== CAMADA 4: HERE API (POIs comerciais complementares) ==========
+// Busca POIs que o OSM pode não ter: postos com bandeira, comércios, serviços
+async function findNearbyPOIsHERE(lat, lng) {
+  const apiKey = getHereApiKey();
+  if (!apiKey) return []; // sem API key, pular silenciosamente
+
+  try {
+    // Categorias relevantes como referência:
+    // 700-7600 = postos de combustível, 800-8000 = saúde,
+    // 800-8200 = educação, 600-6300 = supermercados/mercearias,
+    // 300-3200 = locais religiosos, 700-7850 = oficinas/serviços auto,
+    // 550-5510 = delegacias/bombeiros
+    const categories = '700-7600,800-8000,800-8200,600-6300,300-3200,700-7850,550-5510';
+
+    const url = `https://browse.search.hereapi.com/v1/browse?at=${lat},${lng}&categories=${categories}&limit=10&in=circle:${lat},${lng};r=150&lang=pt-BR&apiKey=${apiKey}`;
+
+    const response = await fetchWithRetry(url, {}, { maxRetries: 1, timeoutMs: 10000 });
+    const data = await response.json();
+
+    if (!data.items || data.items.length === 0) return [];
+
+    return data.items
+      .filter(item => item.title && item.position)
+      .map(item => {
+        const dist = item.distance || haversineDistance(lat, lng, item.position.lat, item.position.lng);
+        const catInfo = mapHereCategory(item.categories);
+        return {
+          name: item.title,
+          type: catInfo.type,
+          category: catInfo.category,
+          icon: getPOIIcon(catInfo.type, catInfo.category),
+          distance: Math.round(dist),
+          source: 'here',
+          relevance: calculateRelevance(catInfo.category, dist)
+        };
+      })
+      .filter(p => p.distance <= 150);
+  } catch (err) {
+    console.log('Erro HERE API:', err);
+    return [];
+  }
+}
+
+// Mapear categorias HERE para nosso sistema de categorias
+function mapHereCategory(categories) {
+  if (!categories || categories.length === 0) return { type: 'other', category: 'other' };
+
+  const catId = categories[0].id || '';
+
+  // Postos de combustível
+  if (catId.startsWith('700-7600')) return { type: 'fuel', category: 'amenity' };
+  // Saúde
+  if (catId.startsWith('800-8000')) return { type: 'hospital', category: 'amenity' };
+  // Educação
+  if (catId.startsWith('800-8200')) return { type: 'school', category: 'amenity' };
+  // Supermercados/mercearias
+  if (catId.startsWith('600-6300')) return { type: 'supermarket', category: 'shop' };
+  // Locais religiosos
+  if (catId.startsWith('300-3200')) return { type: 'place_of_worship', category: 'amenity' };
+  // Serviços automotivos
+  if (catId.startsWith('700-7850')) return { type: 'car_repair', category: 'amenity' };
+  // Segurança pública
+  if (catId.startsWith('550-5510')) return { type: 'police', category: 'amenity' };
+
+  // Fallback por faixa de nível 1
+  const level1 = catId.substring(0, 3);
+  const level1Map = {
+    '100': { type: 'restaurant', category: 'amenity' },
+    '200': { type: 'hotel', category: 'amenity' },
+    '300': { type: 'attraction', category: 'tourism' },
+    '400': { type: 'transport', category: 'structure' },
+    '500': { type: 'government', category: 'amenity' },
+    '550': { type: 'police', category: 'amenity' },
+    '600': { type: 'shop', category: 'shop' },
+    '700': { type: 'business', category: 'amenity' },
+    '800': { type: 'facility', category: 'amenity' },
+    '900': { type: 'building', category: 'building' }
+  };
+
+  return level1Map[level1] || { type: 'other', category: 'other' };
+}
+
+// ========== Função híbrida: combina as 4 camadas ==========
 async function findNearbyPOIs(lat, lng) {
   // Verificar cache
   const cached = geoCache.get('pois', lat, lng);
   if (cached) return cached;
 
   try {
-    // Executar as 3 camadas em paralelo com tolerância a falhas
+    // Executar as 4 camadas em paralelo com tolerância a falhas
     const results = await Promise.allSettled([
       findNearbyPOIsOverpass(lat, lng),
       findNearbyPOIsNominatim(lat, lng),
-      findNearbyPOIsWikidata(lat, lng)
+      findNearbyPOIsWikidata(lat, lng),
+      findNearbyPOIsHERE(lat, lng)
     ]);
 
     // Combinar resultados bem-sucedidos (ignorar camadas que falharam)
     const allPOIs = [];
-    const sources = ['Overpass', 'Nominatim', 'Wikidata'];
+    const sources = ['Overpass', 'Nominatim', 'Wikidata', 'HERE'];
     results.forEach((result, i) => {
       if (result.status === 'fulfilled') {
         allPOIs.push(...result.value);
