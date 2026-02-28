@@ -1,21 +1,5 @@
 // ========== Geocodificação Reversa e Referências ==========
 
-// ========== HERE API Key (armazenada no localStorage) ==========
-let hereApiKey = localStorage.getItem('hereApiKey') || '';
-
-function saveHereApiKey(key) {
-  hereApiKey = (key || '').trim();
-  if (hereApiKey) {
-    localStorage.setItem('hereApiKey', hereApiKey);
-  } else {
-    localStorage.removeItem('hereApiKey');
-  }
-}
-
-function getHereApiKey() {
-  return hereApiKey;
-}
-
 // ========== Dados locais de KM (BR-101 e BR-235 em Sergipe) ==========
 let highwayKmData = null; // carregado sob demanda
 
@@ -103,7 +87,7 @@ const geoCache = {
   gridSizes: {
     address: 0.0001, // ~11m - preciso para números de endereço
     highway: 0.001,  // ~110m - mesma rodovia numa faixa ampla
-    pois: 0.0003     // ~33m - referências próximas (raio 100m)
+    pois: 0.0008     // ~90m - referências próximas (raio 250m)
   },
 
   _key(type, lat, lng) {
@@ -379,15 +363,18 @@ async function findHighwayInfo(lat, lng) {
 // Busca apenas POIs que servem como referência real e reconhecível
 async function findNearbyPOIsOverpass(lat, lng) {
   try {
-    const radius = 100; // metros — raio curto para só trazer referências realmente próximas
+    const radius = 250; // metros — raio amplo para cobrir áreas residenciais
     const query = `
       [out:json][timeout:15];
       (
-        // Postos de combustível, hospitais, escolas, igrejas, delegacias, bombeiros
-        nwr["amenity"~"fuel|hospital|clinic|school|place_of_worship|police|fire_station|bus_station"]["name"](around:${radius},${lat},${lng});
+        // Postos, hospitais, escolas, igrejas, delegacias, bombeiros, farmácias, bancos, restaurantes
+        nwr["amenity"~"fuel|hospital|clinic|school|place_of_worship|police|fire_station|bus_station|pharmacy|bank|restaurant|cafe|fast_food|bar|post_office|kindergarten"]["name"](around:${radius},${lat},${lng});
 
-        // Supermercados e grandes comércios
-        nwr["shop"~"supermarket|department_store|mall"]["name"](around:${radius},${lat},${lng});
+        // Supermercados, padarias, mercearias, lojas de conveniência
+        nwr["shop"~"supermarket|department_store|mall|convenience|bakery|butcher"]["name"](around:${radius},${lat},${lng});
+
+        // Lazer (praças, parques, quadras)
+        nwr["leisure"~"park|playground|sports_centre|stadium"]["name"](around:${radius},${lat},${lng});
 
         // Estruturas construídas (pontes, viadutos, torres)
         nwr["man_made"]["name"](around:${radius},${lat},${lng});
@@ -404,6 +391,9 @@ async function findNearbyPOIsOverpass(lat, lng) {
 
         // Histórico (monumentos, marcos)
         nwr["historic"]["name"](around:${radius},${lat},${lng});
+
+        // Turismo (museus, atrações, mirantes)
+        nwr["tourism"~"museum|attraction|viewpoint"]["name"](around:${radius},${lat},${lng});
       );
       out center tags;
     `;
@@ -447,8 +437,8 @@ async function findNearbyPOIsNominatim(lat, lng) {
   try {
     await waitRateLimit();
 
-    // Criar viewbox de ~100m ao redor do ponto
-    const delta = 0.0009; // ~100m em graus
+    // Criar viewbox de ~250m ao redor do ponto
+    const delta = 0.00225; // ~250m em graus
     const viewbox = `${lng - delta},${lat + delta},${lng + delta},${lat - delta}`;
 
     const response = await fetchWithRetry(
@@ -473,7 +463,7 @@ async function findNearbyPOIsNominatim(lat, lng) {
           relevance: calculateRelevance(category, dist)
         };
       })
-      .filter(p => p.distance <= 100); // filtrar apenas os realmente próximos
+      .filter(p => p.distance <= 250); // filtrar os realmente próximos
   } catch (err) {
     console.log('Erro Nominatim search:', err);
     return [];
@@ -484,7 +474,7 @@ async function findNearbyPOIsNominatim(lat, lng) {
 // Busca entidades com coordenadas próximas (monumentos, obras de arte, estruturas notáveis)
 async function findNearbyPOIsWikidata(lat, lng) {
   try {
-    const radiusKm = 0.1; // 100 metros
+    const radiusKm = 0.25; // 250 metros
 
     // Query SPARQL para buscar entidades geolocalizadas próximas
     const sparqlQuery = `
@@ -548,106 +538,23 @@ async function findNearbyPOIsWikidata(lat, lng) {
   }
 }
 
-// ========== CAMADA 4: HERE API (POIs comerciais complementares) ==========
-// Busca POIs que o OSM pode não ter: postos com bandeira, comércios, serviços
-async function findNearbyPOIsHERE(lat, lng) {
-  const apiKey = getHereApiKey();
-  if (!apiKey) return []; // sem API key, pular silenciosamente
-
-  try {
-    // Categorias relevantes como referência:
-    // 700-7600 = postos de combustível, 800-8000 = saúde,
-    // 800-8200 = educação, 600-6300 = supermercados/mercearias,
-    // 300-3200 = locais religiosos, 700-7850 = oficinas/serviços auto,
-    // 550-5510 = delegacias/bombeiros
-    const categories = '700-7600,800-8000,800-8200,600-6300,300-3200,700-7850,550-5510';
-
-    const url = `https://browse.search.hereapi.com/v1/browse?at=${lat},${lng}&categories=${categories}&limit=10&in=circle:${lat},${lng};r=150&lang=pt-BR&apiKey=${apiKey}`;
-
-    const response = await fetchWithRetry(url, {}, { maxRetries: 1, timeoutMs: 10000 });
-    const data = await response.json();
-
-    if (!data.items || data.items.length === 0) return [];
-
-    return data.items
-      .filter(item => item.title && item.position)
-      .map(item => {
-        const dist = item.distance || haversineDistance(lat, lng, item.position.lat, item.position.lng);
-        const catInfo = mapHereCategory(item.categories);
-        return {
-          name: item.title,
-          type: catInfo.type,
-          category: catInfo.category,
-          icon: getPOIIcon(catInfo.type, catInfo.category),
-          distance: Math.round(dist),
-          source: 'here',
-          relevance: calculateRelevance(catInfo.category, dist)
-        };
-      })
-      .filter(p => p.distance <= 150);
-  } catch (err) {
-    console.log('Erro HERE API:', err);
-    return [];
-  }
-}
-
-// Mapear categorias HERE para nosso sistema de categorias
-function mapHereCategory(categories) {
-  if (!categories || categories.length === 0) return { type: 'other', category: 'other' };
-
-  const catId = categories[0].id || '';
-
-  // Postos de combustível
-  if (catId.startsWith('700-7600')) return { type: 'fuel', category: 'amenity' };
-  // Saúde
-  if (catId.startsWith('800-8000')) return { type: 'hospital', category: 'amenity' };
-  // Educação
-  if (catId.startsWith('800-8200')) return { type: 'school', category: 'amenity' };
-  // Supermercados/mercearias
-  if (catId.startsWith('600-6300')) return { type: 'supermarket', category: 'shop' };
-  // Locais religiosos
-  if (catId.startsWith('300-3200')) return { type: 'place_of_worship', category: 'amenity' };
-  // Serviços automotivos
-  if (catId.startsWith('700-7850')) return { type: 'car_repair', category: 'amenity' };
-  // Segurança pública
-  if (catId.startsWith('550-5510')) return { type: 'police', category: 'amenity' };
-
-  // Fallback por faixa de nível 1
-  const level1 = catId.substring(0, 3);
-  const level1Map = {
-    '100': { type: 'restaurant', category: 'amenity' },
-    '200': { type: 'hotel', category: 'amenity' },
-    '300': { type: 'attraction', category: 'tourism' },
-    '400': { type: 'transport', category: 'structure' },
-    '500': { type: 'government', category: 'amenity' },
-    '550': { type: 'police', category: 'amenity' },
-    '600': { type: 'shop', category: 'shop' },
-    '700': { type: 'business', category: 'amenity' },
-    '800': { type: 'facility', category: 'amenity' },
-    '900': { type: 'building', category: 'building' }
-  };
-
-  return level1Map[level1] || { type: 'other', category: 'other' };
-}
-
-// ========== Função híbrida: combina as 4 camadas ==========
+// ========== Função híbrida: combina as 3 camadas ==========
 async function findNearbyPOIs(lat, lng) {
   // Verificar cache
   const cached = geoCache.get('pois', lat, lng);
   if (cached) return cached;
 
   try {
-    // Executar as 4 camadas em paralelo com tolerância a falhas
+    // Executar as 3 camadas em paralelo com tolerância a falhas
     const results = await Promise.allSettled([
       findNearbyPOIsOverpass(lat, lng),
       findNearbyPOIsNominatim(lat, lng),
-      findNearbyPOIsWikidata(lat, lng),
-      findNearbyPOIsHERE(lat, lng)
+      findNearbyPOIsWikidata(lat, lng)
     ]);
 
     // Combinar resultados bem-sucedidos (ignorar camadas que falharam)
     const allPOIs = [];
-    const sources = ['Overpass', 'Nominatim', 'Wikidata', 'HERE'];
+    const sources = ['Overpass', 'Nominatim', 'Wikidata'];
     results.forEach((result, i) => {
       if (result.status === 'fulfilled') {
         allPOIs.push(...result.value);

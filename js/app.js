@@ -188,37 +188,6 @@ function initPWAInstall() {
   });
 }
 
-// ========== HERE API Key ==========
-function initHereApiKey() {
-  const input = document.getElementById('hereApiKeyInput');
-  const saveBtn = document.getElementById('saveHereApiKeyBtn');
-  const status = document.getElementById('hereApiKeyStatus');
-  if (!input || !saveBtn) return;
-
-  // Carregar chave salva
-  const savedKey = getHereApiKey();
-  if (savedKey) {
-    input.value = savedKey;
-    status.textContent = '✓ Chave configurada — referências HERE ativas';
-    status.style.color = 'var(--success)';
-  }
-
-  saveBtn.addEventListener('click', () => {
-    const key = input.value.trim();
-    saveHereApiKey(key);
-
-    if (key) {
-      status.textContent = '✓ Chave salva — referências HERE ativas';
-      status.style.color = 'var(--success)';
-      showToast('API Key HERE salva com sucesso');
-    } else {
-      status.textContent = 'Chave removida — usando apenas OSM/Wikidata';
-      status.style.color = 'var(--text-muted)';
-      showToast('API Key HERE removida');
-    }
-  });
-}
-
 // ========== Service Worker ==========
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
@@ -239,7 +208,6 @@ async function init() {
   initBackup();
   initTagsManager();
   initPWAInstall();
-  initHereApiKey();
   registerServiceWorker();
 }
 
